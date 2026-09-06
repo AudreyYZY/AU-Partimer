@@ -1,0 +1,189 @@
+// AU-Partimer: Employment Rights Diagnostic Agent
+// Database Schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions  DiagnosticSession[]
+  documents Document[]
+}
+
+// ─── Diagnostic Sessions ──────────────────────────────
+
+model DiagnosticSession {
+  id        String        @id @default(cuid())
+  userId    String?
+  flowType  FlowType
+  status    SessionStatus @default(IN_PROGRESS)
+
+  // Collected workplace facts (JSON for flexibility)
+  // Structure: { state, visaType, industry, employmentType, hourlyRate,
+  //              paymentMethod, hasPayslip, hasSuper, trialShiftHours,
+  //              employmentDurationWeeks, weeklyHours, ... }
+  workplaceFacts String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?                @relation(fields: [userId], references: [id])
+  messages  ConversationMessage[]
+  findings  Finding[]
+  report    Report?
+  documents Document[]
+}
+
+enum FlowType {
+  HEALTH_CHECK
+  SITUATION_ANALYZER
+  DOCUMENT_ANALYSIS
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  AWAITING_INPUT
+  ANALYZING
+  COMPLETED
+  ABANDONED
+}
+
+// ─── Conversation Messages ────────────────────────────
+
+model ConversationMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      MessageRole
+  content   String      @db.Text
+  metadata  String?     @db.Text // tool calls, extracted facts, etc.
+  createdAt DateTime    @default(now())
+
+  session   DiagnosticSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+// ─── Documents ────────────────────────────────────────
+
+model Document {
+  id            String         @id @default(cuid())
+  userId        String?
+  sessionId     String?
+  fileName      String
+  fileUrl       String         @db.Text
+  mimeType      String
+  fileSize      Int
+  extractedText String?        @db.Text
+  ocrUsed       Boolean        @default(false)
+  status        DocumentStatus @default(UPLOADED)
+  createdAt     DateTime       @default(now())
+
+  user    User?               @relation(fields: [userId], references: [id])
+  session DiagnosticSession?  @relation(fields: [sessionId], references: [id])
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  EXTRACTED
+  FAILED
+}
+
+// ─── Findings ─────────────────────────────────────────
+
+model Finding {
+  id                  String   @id @default(cuid())
+  sessionId           String
+  type                String // e.g. "underpayment", "missing_super", "payslip_violation"
+  title               String
+  severity            Severity
+  explanation         String   @db.Text
+  legalBasis          String   @db.Text
+  legalRef            String? // e.g. "Fair Work Act 2009, s.536"
+  recommendedAction   String   @db.Text
+  evidenceToCollect   String[] // array of evidence items
+  ruleId              String? // which rule triggered this finding
+  facts               String?  @db.Text // the specific facts that triggered it (JSON)
+  createdAt           DateTime @default(now())
+
+  session DiagnosticSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+// ─── Reports ──────────────────────────────────────────
+
+model Report {
+  id                String   @id @default(cuid())
+  sessionId         String   @unique
+  summary           String   @db.Text
+  overallAssessment String   @db.Text
+  nextSteps         String[]
+  resources         String   @db.Text // JSON array of {name, url} objects
+  disclaimer        String   @db.Text
+  generatedAt       DateTime @default(now())
+
+  session DiagnosticSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+// ─── Legal Knowledge (for rule engine) ────────────────
+
+model LegalRule {
+  id          String   @id @default(cuid())
+  ruleId      String   @unique // e.g. "MIN_WAGE_2026", "SUPER_SG_2026"
+  category    String // "wages", "super", "payslip", "trial", "hours", "visa"
+  name        String
+  description String   @db.Text
+  conditions  String   @db.Text // JSON: rule engine conditions
+  event       String   @db.Text // JSON: rule engine event (finding to produce)
+  legalRef    String // statute reference
+  sourceUrl   String?  @db.Text
+  effectiveFrom DateTime
+  effectiveTo   DateTime? // null = currently active
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Award Rate Tables ────────────────────────────────
+
+model AwardRate {
+  id             String   @id @default(cuid())
+  awardCode      String // e.g. "MA000119"
+  awardName      String // e.g. "Restaurant Industry Award 2020"
+  classification String // e.g. "Level 1"
+  description    String
+  baseHourly     Decimal  @db.Decimal(10, 2)
+  casualHourly   Decimal  @db.Decimal(10, 2) // base + 25% loading
+  effectiveFrom  DateTime
+  effectiveTo    DateTime? // null = currently active
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@index([awardCode, classification, effectiveFrom])
+}
