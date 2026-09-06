@@ -425,17 +425,9 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(390px,1.08fr)]">
-      <Card className="rounded-lg border-slate-900 bg-[#fbfbf7] py-0 shadow-[8px_8px_0_rgba(15,23,42,0.10)]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(390px,1.05fr)]">
+      <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
         <CardHeader className="border-b border-slate-200 bg-white px-0 py-0">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </div>
-            <span className="text-xs font-medium text-slate-500">AU-PARTIMER</span>
-          </div>
           <div className="grid gap-4 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center">
             <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-950">
               <BriefcaseBusiness className="h-5 w-5 text-teal-700" />
@@ -662,7 +654,7 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
           )}
 
           <Button
-            className="h-11 w-full rounded-md bg-slate-950 text-white shadow-[4px_4px_0_rgba(20,184,166,0.32)] hover:bg-slate-800"
+            className="h-11 w-full rounded-md bg-slate-950 text-white hover:bg-slate-800"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -697,8 +689,8 @@ function DecisionPanel({
   if (!report) {
     return (
       <div className="sticky top-24 grid gap-4 self-start">
-        <div className="rounded-lg border border-slate-900 bg-white p-5 shadow-[8px_8px_0_rgba(15,23,42,0.10)]">
-          <div className="flex min-h-[360px] flex-col justify-between">
+        <div className="rounded-md border border-slate-200 bg-white p-5">
+          <div className="flex min-h-[320px] flex-col justify-between">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
                 <p className="text-xs font-semibold text-slate-500">
@@ -711,15 +703,23 @@ function DecisionPanel({
               <ShieldAlert className="h-9 w-9 text-slate-400" />
             </div>
 
-            <div className="grid place-items-center py-8">
-              <div className="relative h-44 w-44">
-                <div className="absolute inset-0 rounded-full border border-slate-200" />
-                <div className="absolute inset-5 rounded-full border border-dashed border-slate-300" />
-                <div className="absolute inset-12 rounded-full border border-slate-200 bg-slate-50" />
-                <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-600" />
-                <div className="absolute left-1/2 top-1/2 h-px w-20 origin-left -translate-y-1/2 bg-teal-600" />
+            <div className="grid gap-2 py-6">
+              {[t.sections.signals, t.sections.questions, t.sections.safeguards].map(
+                (label) => (
+                  <div
+                    key={label}
+                    className="grid grid-cols-[120px_1fr] border border-slate-200 bg-slate-50 text-sm"
+                  >
+                    <div className="border-r border-slate-200 px-3 py-2 font-medium text-slate-700">
+                      {label}
+                    </div>
+                    <div className="px-3 py-2 text-slate-400">
+                      {language === "zh" ? "等待分析结果" : "Awaiting assessment"}
+                    </div>
+                  </div>
+                )
+              )}
               </div>
-            </div>
 
             <p className="border-t border-slate-200 pt-4 text-sm leading-6 text-slate-600">
               {t.emptyText}
@@ -745,7 +745,7 @@ function DecisionPanel({
   return (
     <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
       <div
-        className={`overflow-hidden rounded-lg border-2 bg-white shadow-[8px_8px_0_rgba(15,23,42,0.10)] ${decisionStyles[report.decision]}`}
+        className={`overflow-hidden rounded-md border bg-white shadow-none ${decisionStyles[report.decision]}`}
       >
         <div className={`h-2 ${decisionAccentStyles[report.decision]}`} />
         <div className="p-5">
@@ -807,7 +807,7 @@ function DecisionPanel({
 
       <TrustPanel report={report} language={language} />
 
-      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+      <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <AlertTriangle className="h-5 w-5" />
@@ -871,7 +871,7 @@ function DecisionPanel({
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+      <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <HelpCircle className="h-5 w-5" />
@@ -892,7 +892,7 @@ function DecisionPanel({
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+      <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <ClipboardList className="h-5 w-5" />
@@ -911,7 +911,7 @@ function DecisionPanel({
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+      <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <WalletCards className="h-5 w-5" />
@@ -938,7 +938,7 @@ function DecisionPanel({
       </Card>
 
       {localizedMissingChecks.length > 0 && (
-        <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+        <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
           <CardHeader>
             <CardTitle className="text-lg">{t.sections.missing}</CardTitle>
           </CardHeader>
@@ -970,7 +970,7 @@ function TrustPanel({
   const localizedLimitations = localizeLimitations(report, language);
 
   return (
-    <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+    <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <ShieldCheck className="h-5 w-5 text-teal-700" />
