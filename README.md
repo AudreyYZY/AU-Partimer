@@ -12,6 +12,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 
 输出内容：
 - 继续策略：不要继续、先确认再继续、短期过渡但要保护自己、相对可继续
+- 风险分、可信度、证据完整度、来源覆盖率和规则版本
 - 诈骗、工资、工资单、养老金、签证工时和现实可行性风险
 - 开始前应该问雇主的问题
 - 急需收入时的 harm-reduction 保护措施
@@ -80,6 +81,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 - 合成案例和 AI 生成案例只能用于测试，不能作为法律来源。
 - 先交钱、加密货币充值、代收转账、过早索要身份文件等高风险诈骗信号应覆盖普通评分。
 - 如果用户现金压力高且没有其他机会，产品应提供保护措施和退出条件，而不是简单劝退。
+- 每份机会判断报告都会返回 `riskScore`、`confidence`、`meta.rulesetVersion`、`meta.effectiveFrom` 和当前工资基准。
 
 ## 评估指标
 
@@ -95,6 +97,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 - 低于当前全国最低基准不能漏报
 - 没有证据时不能给确定违法结论
 - 现金压力高时必须给短期保护策略，而不是只有拒绝建议
+- 真实案例抽象出的回归样例必须通过 `npm test`
 
 ## Getting Started
 
@@ -149,6 +152,8 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 ## Real Case Corpus
 
 真实案例和官方材料整理在 `docs/research/real-case-corpus.md`。这些材料用于设计规则、构造测试样例和校验风险标签，不应被复制成“个案法律结论”。
+
+评估方法和企业级上线门槛整理在 `docs/research/evaluation-framework.md`。
 
 ## Important Contacts
 

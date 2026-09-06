@@ -10,6 +10,8 @@
 >
 > For source-backed real case seeds, use
 > [`docs/research/real-case-corpus.md`](../research/real-case-corpus.md).
+> For evaluation targets and release gates, use
+> [`docs/research/evaluation-framework.md`](../research/evaluation-framework.md).
 
 ---
 

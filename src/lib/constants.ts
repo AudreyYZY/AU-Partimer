@@ -1,5 +1,6 @@
 // ─── National Minimum Wage (from 1 July 2026) ────────
 
+export const OPPORTUNITY_RULESET_VERSION = "2026.09.06";
 export const NATIONAL_MIN_WAGE_EFFECTIVE_FROM = "2026-07-01";
 export const NATIONAL_MIN_WAGE_HOURLY = 26.44;
 export const NATIONAL_MIN_WAGE_WEEKLY = 1004.9; // 38 hours

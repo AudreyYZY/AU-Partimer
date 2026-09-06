@@ -64,6 +64,8 @@ export interface RiskSignal {
   explanation: string;
   sourceName?: string;
   sourceUrl?: string;
+  sourceId?: string;
+  caseIds?: string[];
 }
 
 export interface OpportunityAlternative {
@@ -72,15 +74,41 @@ export interface OpportunityAlternative {
   whatToSearch: string[];
 }
 
+export type ConfidenceLevel = "high" | "medium" | "low";
+
+export interface OpportunityConfidence {
+  level: ConfidenceLevel;
+  score: number;
+  evidenceCompleteness: number;
+  sourceCoverage: number;
+  explanation: string;
+}
+
+export interface OpportunityReportMeta {
+  rulesetVersion: string;
+  generatedAt: string;
+  jurisdiction: "AU";
+  effectiveFrom: string;
+  wageBenchmark: {
+    adultHourly: number;
+    adultCasualHourly: number;
+    note: string;
+  };
+  limitations: string[];
+}
+
 export interface OpportunityReport {
   decision: OpportunityDecision;
   decisionLabel: string;
   summary: string;
+  riskScore: number;
+  confidence: OpportunityConfidence;
   riskSignals: RiskSignal[];
   missingChecks: string[];
   questionsForEmployer: string[];
   safeguards: string[];
   alternatives: OpportunityAlternative[];
   sources: Array<{ name: string; url: string }>;
+  meta: OpportunityReportMeta;
   disclaimer: string;
 }

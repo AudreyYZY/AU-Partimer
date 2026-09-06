@@ -1,8 +1,11 @@
 import {
+  NATIONAL_MIN_WAGE_EFFECTIVE_FROM,
   NATIONAL_MIN_WAGE_HOURLY,
   NATIONAL_MIN_WAGE_CASUAL_HOURLY,
+  OPPORTUNITY_RULESET_VERSION,
 } from "@/lib/constants";
 import type {
+  OpportunityConfidence,
   OpportunityAlternative,
   OpportunityDecision,
   OpportunityFacts,
@@ -33,21 +36,66 @@ const SOURCES = [
   },
 ];
 
+const REQUIRED_FACT_KEYS: Array<keyof OpportunityFacts> = [
+  "state",
+  "visaType",
+  "industry",
+  "employmentType",
+  "offeredHourlyRate",
+  "weeklyHours",
+  "paymentMethod",
+  "hasPayslip",
+  "superMentioned",
+  "hasWrittenAgreement",
+  "contactChannel",
+  "hasOtherOptions",
+  "cashPressure",
+];
+
+const BAND_WEIGHTS: Record<RiskSignal["band"], number> = {
+  severe: 36,
+  high: 22,
+  medium: 11,
+  low: 4,
+};
+
 export function assessOpportunity(facts: OpportunityFacts): OpportunityReport {
   const riskSignals = buildRiskSignals(facts);
   const missingChecks = buildMissingChecks(facts);
   const decision = chooseDecision(facts, riskSignals);
+  const riskScore = calculateRiskScore(riskSignals, missingChecks);
+  const confidence = buildConfidence(facts, riskSignals, missingChecks);
 
   return {
     decision,
     decisionLabel: getDecisionLabel(decision),
     summary: getDecisionSummary(decision, facts, riskSignals),
+    riskScore,
+    confidence,
     riskSignals,
     missingChecks,
     questionsForEmployer: buildQuestionsForEmployer(facts, riskSignals),
     safeguards: buildSafeguards(facts, riskSignals),
     alternatives: buildAlternatives(facts.industry),
     sources: SOURCES,
+    meta: {
+      rulesetVersion: OPPORTUNITY_RULESET_VERSION,
+      generatedAt: new Date().toISOString(),
+      jurisdiction: "AU",
+      effectiveFrom: NATIONAL_MIN_WAGE_EFFECTIVE_FROM,
+      wageBenchmark: {
+        adultHourly: NATIONAL_MIN_WAGE_HOURLY,
+        adultCasualHourly: NATIONAL_MIN_WAGE_CASUAL_HOURLY,
+        note:
+          "National adult benchmark only. Award, age, classification, duties, and penalty rates may require higher rates.",
+      },
+      limitations: [
+        "This screening does not verify whether an employer or job ad is genuine.",
+        "It does not calculate award-specific rates, penalty rates, allowances, or junior rates.",
+        "It does not provide legal, migration, tax, or financial advice.",
+        "Low-risk output still depends on the facts entered by the user.",
+      ],
+    },
     disclaimer:
       "This is a practical screening tool, not legal or migration advice. It highlights risk signals from the information provided and points you to official sources for checking.",
   };
@@ -66,6 +114,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "A job that requires a deposit, recharge, training fee, equipment payment, PayID transfer, or cryptocurrency top-up before you earn money is a major job scam signal.",
       sourceName: "Scamwatch",
       sourceUrl: "https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams",
+      sourceId: "SCAMWATCH-JOBSCAMS",
+      caseIds: ["SCAMWATCH-JOBSCAMS"],
     });
   }
 
@@ -79,6 +129,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Work that involves moving money, receiving packages, buying items, using crypto, or topping up an account can expose the worker to fraud or money mule risk.",
       sourceName: "Scamwatch",
       sourceUrl: "https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams",
+      sourceId: "SCAMWATCH-JOBSCAMS",
+      caseIds: ["SCAMWATCH-JOBSCAMS"],
     });
   }
 
@@ -96,6 +148,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Unexpected or fast-moving recruitment through SMS, WhatsApp, Telegram, or similar channels is not automatically fake, but it needs independent verification.",
       sourceName: "Scamwatch",
       sourceUrl: "https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams",
+      sourceId: "SCAMWATCH-JOBSCAMS",
+      caseIds: ["SCAMWATCH-JOBSCAMS"],
     });
   }
 
@@ -109,6 +163,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Passport, licence, Medicare, bank, or tax details should only be shared after you are confident the employer is genuine and the role is real.",
       sourceName: "Scamwatch",
       sourceUrl: "https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams",
+      sourceId: "SCAMWATCH-JOBSCAMS",
+      caseIds: ["SCAMWATCH-JOBSCAMS"],
     });
   }
 
@@ -122,6 +178,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Pressure is a common manipulation pattern. A legitimate employer should be able to answer basic questions about pay, employer identity, and work conditions.",
       sourceName: "Scamwatch",
       sourceUrl: "https://www.scamwatch.gov.au/stop-check-protect/help-to-spot-and-avoid-scams/methods-scammers-use",
+      sourceId: "SCAMWATCH-PRESSURE",
+      caseIds: ["SCAMWATCH-JOBSCAMS", "ACCC-2025-SCAMS"],
     });
   }
 
@@ -144,6 +202,15 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
           }minimum benchmark of $${relevantMinimum.toFixed(2)}/hr. Exact award rates can depend on age, classification, duties, and coverage, so this should be treated as a serious check item rather than a final legal conclusion.`,
         sourceName: "Fair Work Ombudsman",
         sourceUrl: "https://www.fairwork.gov.au/pay-and-wages/minimum-wages",
+        sourceId: "FWO-MINIMUM-WAGES-2026",
+        caseIds: [
+          "FWO-2026-CARLUCCIS",
+          "FWO-2026-MISO",
+          "FWO-2025-DINTAIFUNG",
+          "FWO-2025-MRVIET",
+          "FWO-2019-PHATELEPHANT",
+          "FWO-2015-GLORIAJEANS",
+        ],
       });
     }
   }
@@ -158,6 +225,13 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Cash payment is not automatically unlawful, but without payslips, rosters, and written pay terms it becomes much harder to prove hours, rate, tax, and super.",
       sourceName: "Fair Work Ombudsman",
       sourceUrl: "https://www.fairwork.gov.au/pay-and-wages/paying-wages/pay-slips",
+      sourceId: "FWO-PAYSLIPS",
+      caseIds: [
+        "FWO-2026-MISO",
+        "FWO-2025-MRVIET",
+        "FWO-2019-PHATELEPHANT",
+        "FWO-2015-GLORIAJEANS",
+      ],
     });
   }
 
@@ -171,6 +245,13 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Employers need to give employees pay slips within one working day of pay day. No payslip also makes wage and super checks harder.",
       sourceName: "Fair Work Ombudsman",
       sourceUrl: "https://www.fairwork.gov.au/pay-and-wages/paying-wages/pay-slips",
+      sourceId: "FWO-PAYSLIPS",
+      caseIds: [
+        "FWO-2026-MISO",
+        "FWO-2025-MRVIET",
+        "FWO-2019-PHATELEPHANT",
+        "FWO-2015-GLORIAJEANS",
+      ],
     });
   }
 
@@ -184,6 +265,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Super is usually paid on top of wages for eligible employees. Ask how super will be handled and check it through your fund or myGov after starting.",
       sourceName: "ATO",
       sourceUrl: "https://www.ato.gov.au/tax-rates-and-codes/key-superannuation-rates-and-thresholds/super-guarantee",
+      sourceId: "ATO-SUPER-GUARANTEE",
+      caseIds: ["FWO-2026-CARLUCCIS"],
     });
   }
 
@@ -195,6 +278,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
       title: "Employment terms are not written down",
       explanation:
         "Before starting, try to get written confirmation of employer name, ABN if available, role, hourly rate before tax, pay cycle, trial shift terms, and payslip arrangement.",
+      sourceId: "FWO-RECORDS",
+      caseIds: ["FWO-2026-MISO", "FWO-2025-MRVIET"],
     });
   }
 
@@ -212,6 +297,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "A short unpaid trial may be allowed only when it is genuinely needed to show skills and is directly supervised. Longer or productive trial work may need to be paid.",
       sourceName: "Fair Work Ombudsman",
       sourceUrl: "https://www.fairwork.gov.au/starting-employment/unpaid-work/unpaid-trials",
+      sourceId: "FWO-UNPAID-TRIALS",
+      caseIds: ["FWO-2015-GLORIAJEANS"],
     });
   }
 
@@ -225,6 +312,8 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
         "Student visa work limits are counted across a rolling 14-day fortnight, not just a simple weekly average. Check your exact roster across both weeks.",
       sourceName: "Department of Home Affairs",
       sourceUrl: "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500",
+      sourceId: "HOMEAFFAIRS-STUDENT-500",
+      caseIds: ["FWO-VISA-LEON"],
     });
   }
 
@@ -236,10 +325,99 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
       title: "Long commute reduces the real value of the job",
       explanation:
         "A long commute can turn a stable-looking job into low effective hourly pay, especially for short shifts or late-night finish times.",
+      sourceId: "PRACTICAL-EFFECTIVE-PAY",
     });
   }
 
   return signals;
+}
+
+function calculateRiskScore(
+  riskSignals: RiskSignal[],
+  missingChecks: string[]
+): number {
+  const signalScore = riskSignals.reduce(
+    (total, signal) => total + BAND_WEIGHTS[signal.band],
+    0
+  );
+  const missingScore = Math.min(missingChecks.length * 4, 18);
+
+  return Math.min(100, signalScore + missingScore);
+}
+
+function buildConfidence(
+  facts: OpportunityFacts,
+  riskSignals: RiskSignal[],
+  missingChecks: string[]
+): OpportunityConfidence {
+  const evidenceCompleteness = calculateEvidenceCompleteness(facts, missingChecks);
+  const sourcedSignals = riskSignals.filter(
+    (signal) => signal.sourceUrl || signal.sourceId
+  ).length;
+  const sourceCoverage =
+    riskSignals.length === 0
+      ? 100
+      : Math.round((sourcedSignals / riskSignals.length) * 100);
+  const sourcePenalty = sourceCoverage >= 80 ? 0 : sourceCoverage >= 60 ? 8 : 16;
+  const confidenceScore = Math.max(
+    0,
+    Math.min(100, evidenceCompleteness - sourcePenalty)
+  );
+  const level =
+    confidenceScore >= 82 ? "high" : confidenceScore >= 58 ? "medium" : "low";
+
+  return {
+    level,
+    score: confidenceScore,
+    evidenceCompleteness,
+    sourceCoverage,
+    explanation: buildConfidenceExplanation(
+      level,
+      evidenceCompleteness,
+      sourceCoverage,
+      missingChecks
+    ),
+  };
+}
+
+function calculateEvidenceCompleteness(
+  facts: OpportunityFacts,
+  missingChecks: string[]
+): number {
+  const presentFacts = REQUIRED_FACT_KEYS.filter((key) => {
+    const value = facts[key];
+
+    if (value === undefined || value === null || value === "") return false;
+    if (value === "unknown") return false;
+
+    return true;
+  }).length;
+  const rawCompleteness = Math.round(
+    (presentFacts / REQUIRED_FACT_KEYS.length) * 100
+  );
+  const missingPenalty = Math.min(missingChecks.length * 3, 21);
+
+  return Math.max(0, rawCompleteness - missingPenalty);
+}
+
+function buildConfidenceExplanation(
+  level: OpportunityConfidence["level"],
+  evidenceCompleteness: number,
+  sourceCoverage: number,
+  missingChecks: string[]
+): string {
+  const prefix = {
+    high: "Most key fields are present and the main signals are tied to source-backed rules.",
+    medium:
+      "The result is useful for screening, but some facts still need verification before relying on it.",
+    low: "The result is provisional because too many key facts are missing or unverifiable.",
+  }[level];
+  const missing =
+    missingChecks.length > 0
+      ? ` Missing checks: ${missingChecks.slice(0, 3).join("; ")}.`
+      : "";
+
+  return `${prefix} Evidence completeness: ${evidenceCompleteness}%. Source coverage: ${sourceCoverage}%.${missing}`;
 }
 
 function buildMissingChecks(facts: OpportunityFacts): string[] {

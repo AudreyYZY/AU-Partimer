@@ -1,14 +1,17 @@
 "use client";
 
 import { useId, useState } from "react";
+import type { ReactNode } from "react";
 import {
   AlertTriangle,
   BadgeCheck,
   BriefcaseBusiness,
   ClipboardList,
+  Gauge,
   HelpCircle,
   Loader2,
   ShieldAlert,
+  ShieldCheck,
   WalletCards,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -135,11 +139,16 @@ const copy = {
     emptyText:
       "填完左边的信息后，这里会显示继续策略、关键风险、该问雇主的问题和更低风险的替代方向。",
     sections: {
+      trust: "可信度与边界",
       signals: "风险信号",
       questions: "先问雇主这些问题",
       safeguards: "保护自己",
       alternatives: "更低风险的同类方向",
       missing: "还缺的信息",
+    },
+    traceability: {
+      sourceId: "规则来源",
+      caseIds: "案例锚点",
     },
     noSignals:
       "没有发现明显严重风险。仍建议保存招聘记录，并在上班前确认工资、排班和工资单。",
@@ -148,6 +157,19 @@ const copy = {
       high: "高",
       medium: "中",
       low: "低",
+    },
+    confidence: {
+      high: "较高",
+      medium: "中等",
+      low: "较低",
+      riskScore: "风险分",
+      confidenceScore: "可信度",
+      evidenceCompleteness: "证据完整度",
+      sourceCoverage: "来源覆盖",
+      ruleset: "规则版本",
+      effectiveFrom: "工资基准生效",
+      benchmark: "当前成人最低基准",
+      limitationTitle: "不要过度解读",
     },
     decisions: {
       STOP: "不要继续",
@@ -200,11 +222,16 @@ const copy = {
     emptyText:
       "After you enter the job details, this panel will show a continue strategy, key risks, employer questions, and safer similar options.",
     sections: {
+      trust: "Reliability and limits",
       signals: "Risk signals",
       questions: "Questions to ask first",
       safeguards: "Protect yourself",
       alternatives: "Lower-risk similar options",
       missing: "Missing information",
+    },
+    traceability: {
+      sourceId: "Rule source",
+      caseIds: "Case anchors",
     },
     noSignals:
       "No obvious severe signal was found. Still keep job records and confirm pay, roster, and payslips before starting.",
@@ -213,6 +240,19 @@ const copy = {
       high: "High",
       medium: "Medium",
       low: "Low",
+    },
+    confidence: {
+      high: "High",
+      medium: "Medium",
+      low: "Low",
+      riskScore: "Risk score",
+      confidenceScore: "Confidence",
+      evidenceCompleteness: "Evidence completeness",
+      sourceCoverage: "Source coverage",
+      ruleset: "Ruleset",
+      effectiveFrom: "Wage benchmark effective",
+      benchmark: "Current adult minimum benchmark",
+      limitationTitle: "Do not over-read",
     },
     decisions: {
       STOP: "Do not continue",
@@ -765,6 +805,8 @@ function DecisionPanel({
         </div>
       </div>
 
+      <TrustPanel report={report} language={language} />
+
       <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -804,6 +846,23 @@ function DecisionPanel({
                     >
                       {localizedSignal.sourceName ?? signal.sourceName}
                     </a>
+                  )}
+                  {(signal.sourceId || signal.caseIds?.length) && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                      {signal.sourceId && (
+                        <span className="border border-slate-200 bg-white px-2 py-1">
+                          {t.traceability.sourceId}: {signal.sourceId}
+                        </span>
+                      )}
+                      {signal.caseIds?.slice(0, 3).map((caseId) => (
+                        <span
+                          key={caseId}
+                          className="border border-slate-200 bg-white px-2 py-1"
+                        >
+                          {t.traceability.caseIds}: {caseId}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               );
@@ -896,6 +955,164 @@ function DecisionPanel({
       )}
     </div>
   );
+}
+
+function TrustPanel({
+  report,
+  language,
+}: {
+  report: OpportunityReport;
+  language: OpportunityLanguage;
+}) {
+  const t = copy[language];
+  const confidenceLabel = t.confidence[report.confidence.level];
+  const localizedExplanation = localizeConfidenceExplanation(report, language);
+  const localizedLimitations = localizeLimitations(report, language);
+
+  return (
+    <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ShieldCheck className="h-5 w-5 text-teal-700" />
+          {t.sections.trust}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MetricTile
+            icon={<Gauge className="h-4 w-4" />}
+            label={t.confidence.riskScore}
+            value={`${report.riskScore}/100`}
+            tone="risk"
+          />
+          <MetricTile
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label={t.confidence.confidenceScore}
+            value={`${confidenceLabel} · ${report.confidence.score}/100`}
+            tone="confidence"
+          />
+        </div>
+
+        <div className="space-y-3">
+          <ProgressLine
+            label={t.confidence.evidenceCompleteness}
+            value={report.confidence.evidenceCompleteness}
+          />
+          <ProgressLine
+            label={t.confidence.sourceCoverage}
+            value={report.confidence.sourceCoverage}
+          />
+        </div>
+
+        <p className="border-l-4 border-teal-600 bg-teal-50 p-3 text-sm leading-6 text-teal-950">
+          {localizedExplanation}
+        </p>
+
+        <div className="grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+          <div className="border border-slate-200 bg-slate-50 p-3">
+            <div className="font-semibold text-slate-900">{t.confidence.ruleset}</div>
+            <div className="mt-1">{report.meta.rulesetVersion}</div>
+          </div>
+          <div className="border border-slate-200 bg-slate-50 p-3">
+            <div className="font-semibold text-slate-900">
+              {t.confidence.effectiveFrom}
+            </div>
+            <div className="mt-1">{report.meta.effectiveFrom}</div>
+          </div>
+          <div className="border border-slate-200 bg-slate-50 p-3 sm:col-span-2">
+            <div className="font-semibold text-slate-900">{t.confidence.benchmark}</div>
+            <div className="mt-1">
+              ${report.meta.wageBenchmark.adultHourly.toFixed(2)}/h · casual $
+              {report.meta.wageBenchmark.adultCasualHourly.toFixed(2)}/h
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+          <div className="text-sm font-semibold text-amber-950">
+            {t.confidence.limitationTitle}
+          </div>
+          <ul className="mt-2 space-y-1 text-xs leading-5 text-amber-950">
+            {localizedLimitations.map((limitation) => (
+              <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MetricTile({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  tone: "risk" | "confidence";
+}) {
+  const className =
+    tone === "risk"
+      ? "border-red-200 bg-red-50 text-red-950"
+      : "border-teal-200 bg-teal-50 text-teal-950";
+
+  return (
+    <div className={`border p-3 ${className}`}>
+      <div className="flex items-center gap-2 text-xs font-semibold">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-2 text-2xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function ProgressLine({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <Progress value={value} className="h-2" />
+    </div>
+  );
+}
+
+function localizeConfidenceExplanation(
+  report: OpportunityReport,
+  language: OpportunityLanguage
+) {
+  if (language === "en") return report.confidence.explanation;
+
+  const prefix = {
+    high: "大多数关键信息已经填写，主要风险信号也绑定了来源规则。",
+    medium: "这个结果适合作为筛查参考，但仍有部分事实需要继续核实。",
+    low: "这个结果只能视为初步提示，因为缺少较多关键信息或来源覆盖不足。",
+  }[report.confidence.level];
+  const missing =
+    report.missingChecks.length > 0
+      ? ` 还缺：${report.missingChecks.slice(0, 3).join("；")}。`
+      : "";
+
+  return `${prefix} 证据完整度 ${report.confidence.evidenceCompleteness}%，来源覆盖 ${report.confidence.sourceCoverage}%。${missing}`;
+}
+
+function localizeLimitations(
+  report: OpportunityReport,
+  language: OpportunityLanguage
+) {
+  if (language === "en") return report.meta.limitations;
+
+  return [
+    "不会自动验证雇主或招聘广告是否真实。",
+    "不会精确计算 award、penalty rates、allowances、junior rates 或具体等级。",
+    "不构成法律、签证、税务或财务建议。",
+    "低风险结果仍然依赖你填写的信息是否准确完整。",
+  ];
 }
 
 function toOptions(options: Record<string, string>) {

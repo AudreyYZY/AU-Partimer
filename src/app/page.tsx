@@ -1,257 +1,273 @@
 import Link from "next/link";
 import {
-  ClipboardCheck,
-  MessageSquareText,
-  FileSearch,
-  ArrowRight,
-  Shield,
   AlertTriangle,
-  DollarSign,
-  FileText,
-  Building2,
-  GraduationCap,
+  ArrowRight,
+  BadgeCheck,
+  ClipboardCheck,
+  FileSearch,
+  Gauge,
+  MessageSquareText,
   SearchCheck,
+  Shield,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  NATIONAL_MIN_WAGE_CASUAL_HOURLY,
+  NATIONAL_MIN_WAGE_EFFECTIVE_FROM,
+  NATIONAL_MIN_WAGE_HOURLY,
+  OPPORTUNITY_RULESET_VERSION,
+  STUDENT_VISA_500_MAX_HOURS_FORTNIGHT,
+} from "@/lib/constants";
 
 const FLOWS = [
   {
     title: "兼职机会判断",
-    description:
-      "适合还没入职或刚看到招聘信息时使用：先判断要不要继续聊、先核实什么、有没有更低风险的同类岗位。",
+    stage: "求职前",
+    status: "核心可用",
+    description: "判断要不要继续聊、先核实什么、有没有更低风险的同类岗位。",
     icon: SearchCheck,
     href: "/opportunity",
-    color: "text-teal-700",
-    bgColor: "bg-teal-50",
+    accent: "bg-teal-500",
   },
   {
     title: "工作权益体检",
-    description:
-      "适合已经在上班时使用：用结构化问题检查工资、工时、工资单、养老金、试工和签证工时。",
+    stage: "已入职",
+    status: "规则可用",
+    description: "检查工资、工时、工资单、养老金、试工和学生签工时。",
     icon: ClipboardCheck,
     href: "/diagnostic/health-check",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    accent: "bg-sky-500",
   },
   {
     title: "具体情况分析",
-    description:
-      "适合遇到某个具体事件时使用：例如被扣钱、被要求赔偿、突然改排班、试工不给钱。",
+    stage: "遇到事件",
+    status: "需配置 LLM",
+    description: "通过追问整理被扣钱、赔偿、改排班、威胁辞退等具体情况。",
     icon: MessageSquareText,
     href: "/diagnostic/analyze",
-    color: "text-green-600",
-    bgColor: "bg-green-50",
+    accent: "bg-emerald-500",
   },
   {
     title: "文件材料检查",
-    description:
-      "适合有工资单、合同、聊天截图或招聘广告时使用：先提取关键信息，再检查潜在问题。",
+    stage: "有材料",
+    status: "纯文本 MVP",
+    description: "上传校验和纯文本提取已可用；PDF/图片 OCR 明确标记暂不支持。",
     icon: FileSearch,
     href: "/diagnostic/documents",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
+    accent: "bg-amber-500",
   },
-];
+] as const;
 
-const COMMON_ISSUES = [
+const CONTROL_POINTS = [
+  ["诈骗硬红旗", "先交钱、加密货币、代收转账、过早索要身份文件会覆盖普通评分。"],
+  [
+    "工资基准",
+    `2026-07-01 起成人基准 $${NATIONAL_MIN_WAGE_HOURLY.toFixed(2)}/h，casual $${NATIONAL_MIN_WAGE_CASUAL_HOURLY.toFixed(2)}/h。`,
+  ],
+  [
+    "签证工时",
+    `学生签 500 上课期间按连续 14 天核对，当前上限 ${STUDENT_VISA_500_MAX_HOURS_FORTNIGHT} 小时。`,
+  ],
+  ["现实压力", "没有其他选择且急需收入时，输出短期保护策略和退出条件，而不是简单劝退。"],
+] as const;
+
+const RELIABILITY_LEVELS = [
   {
-    icon: DollarSign,
-    title: "工资偏低",
-    description: "时薪是否低于当前全国最低基准，或需要进一步核对 award rate？",
+    label: "高可信",
+    text: "明确诈骗信号、全国最低工资基准、工资单要求、学生签工时、证据缺口。",
   },
   {
-    icon: FileText,
-    title: "没有工资单",
-    description: "没有工资单会让工时、税前工资、税和养老金都更难证明。",
+    label: "中可信",
+    text: "是否短期过渡、先问哪些问题、同类替代岗位方向。",
   },
   {
-    icon: Building2,
-    title: "养老金缺失",
-    description: "符合条件的雇员通常应在工资之外获得 superannuation。",
+    label: "暂不声称可信",
+    text: "精确 award rate、雇主真实性自动验证、PDF/图片 OCR、个案法律胜算。",
   },
-  {
-    icon: AlertTriangle,
-    title: "无薪试工",
-    description: "较长或产生实际劳动成果的试工，需要谨慎核查是否应付薪。",
-  },
-  {
-    icon: GraduationCap,
-    title: "签证工时",
-    description: "学生签需要按连续 14 天周期核对工作时间。",
-  },
-];
+] as const;
 
 export default function Home() {
   return (
-    <div className="flex flex-col">
-      <section className="container flex flex-col items-center gap-6 px-4 py-16 text-center md:px-6 md:py-24">
-        <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-          <Shield className="h-4 w-4" />
-          澳大利亚兼职风险判断工具
+    <main className="min-h-screen bg-[#f6f7f2] text-slate-950">
+      <section className="border-b border-slate-900 bg-slate-950 text-white">
+        <div className="container grid gap-8 px-4 py-10 md:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:py-14">
+          <div className="flex flex-col justify-between gap-10">
+            <div>
+              <div className="inline-flex items-center gap-2 border border-teal-300/40 bg-teal-300/10 px-3 py-1 text-xs font-semibold uppercase text-teal-100">
+                <Shield className="h-3.5 w-3.5" />
+                AU-Partimer Agent
+              </div>
+              <h1 className="mt-6 max-w-3xl text-4xl font-semibold md:text-6xl">
+                兼职机会的风险、证据和下一步，一次整理清楚
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">
+                面向澳大利亚兼职求职者和留学生。它不替你做人生决定，而是把诈骗、工资、工资单、养老金、签证工时和现实现金压力分开判断。
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                className="rounded-md bg-teal-400 text-slate-950 hover:bg-teal-300"
+              >
+                <Link href="/opportunity" className="flex items-center">
+                  判断一个兼职
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-md border-white/20 bg-transparent text-white hover:bg-white hover:text-slate-950"
+              >
+                <Link href="/diagnostic/health-check">检查当前工作</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-[#111827] p-4 shadow-[12px_12px_0_rgba(20,184,166,0.18)] md:p-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-100">Agent 状态面板</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  规则版本 {OPPORTUNITY_RULESET_VERSION}
+                </p>
+              </div>
+              <Gauge className="h-8 w-8 text-teal-300" />
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {CONTROL_POINTS.map(([title, text], index) => (
+                <div
+                  key={title}
+                  className="grid grid-cols-[44px_1fr] border border-white/10"
+                >
+                  <div className="grid place-items-center border-r border-white/10 bg-white/[0.04] text-sm font-semibold text-teal-100">
+                    0{index + 1}
+                  </div>
+                  <div className="p-3">
+                    <div className="text-sm font-semibold text-white">{title}</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-400">
+                      {text}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              <div className="border border-white/10 bg-black/20 p-3">
+                <div className="text-slate-400">工资基准生效</div>
+                <div className="mt-1 font-semibold text-white">
+                  {NATIONAL_MIN_WAGE_EFFECTIVE_FROM}
+                </div>
+              </div>
+              <div className="border border-white/10 bg-black/20 p-3">
+                <div className="text-slate-400">输出原则</div>
+                <div className="mt-1 font-semibold text-white">筛查，不判案</div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-          先判断这个<span className="text-primary">兼职机会</span>值不值得继续
-        </h1>
-
-        <p className="max-w-xl text-lg text-muted-foreground">
-          在承诺上班、交资料或投入时间之前，先看诈骗信号、工资风险、工资单、养老金、签证工时和现实现金压力。
-        </p>
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link href="/opportunity" className="flex items-center">
-              判断一个兼职
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline">
-            <Link href="/diagnostic/health-check">检查工作权益</Link>
-          </Button>
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          无需账号 · 给出下一步问题 · 链接官方来源
-        </p>
       </section>
 
-      <section className="container px-4 py-16 md:px-6">
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold">选择你现在需要的检查</h2>
-          <p className="mt-2 text-muted-foreground">
-            四个入口处理的是不同阶段的问题，不是同一个功能重复放四遍。
+      <section className="container px-4 py-10 md:px-6">
+        <div className="mb-5">
+          <h2 className="text-2xl font-semibold">选择当前阶段</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            四个入口处理不同阶段的问题，状态会明确显示。
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {FLOWS.map((flow) => (
-            <Link key={flow.href} href={flow.href} className="group">
-              <Card className="h-full transition-shadow hover:shadow-lg">
-                <CardHeader>
-                  <div
-                    className={`mb-3 flex h-12 w-12 items-center justify-center rounded-lg ${flow.bgColor}`}
-                  >
-                    <flow.icon className={`h-6 w-6 ${flow.color}`} />
+        <div className="overflow-hidden border border-slate-900 bg-white">
+          {FLOWS.map((flow, index) => (
+            <Link
+              key={flow.href}
+              href={flow.href}
+              className="grid gap-4 border-b border-slate-200 p-4 transition-colors last:border-b-0 hover:bg-slate-50 md:grid-cols-[180px_1fr_160px_40px] md:items-center"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`h-9 w-1.5 ${flow.accent}`} />
+                <div>
+                  <div className="text-xs font-semibold text-slate-500">
+                    0{index + 1} · {flow.stage}
                   </div>
-                  <CardTitle className="transition-colors group-hover:text-primary">
-                    {flow.title}
-                  </CardTitle>
-                  <CardDescription>{flow.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm font-medium text-primary">
-                    开始使用
-                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </div>
-                </CardContent>
-              </Card>
+                  <div className="font-semibold">{flow.title}</div>
+                </div>
+              </div>
+              <p className="text-sm leading-6 text-slate-600">{flow.description}</p>
+              <div className="inline-flex w-fit items-center gap-2 border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                <flow.icon className="h-3.5 w-3.5" />
+                {flow.status}
+              </div>
+              <ArrowRight className="hidden h-4 w-4 justify-self-end text-slate-400 md:block" />
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="border-t bg-muted/50">
-        <div className="container px-4 py-16 md:px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold">重点检查哪些风险</h2>
-            <p className="mt-2 text-muted-foreground">
-              先把最容易造成损失、最需要留证据的部分拎出来。
+      <section className="border-y border-slate-200 bg-white">
+        <div className="container grid gap-8 px-4 py-10 md:px-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <div className="inline-flex items-center gap-2 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+              <BadgeCheck className="h-3.5 w-3.5 text-teal-700" />
+              可信度边界
+            </div>
+            <h2 className="mt-4 text-2xl font-semibold">准确，不等于装作全知</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              企业级版本最重要的是可追溯和可评估：每个判断要知道依据、缺失事实、规则版本、适用边界和下一步核查动作。
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {COMMON_ISSUES.map((issue) => (
+          <div className="grid gap-3">
+            {RELIABILITY_LEVELS.map((item) => (
               <div
-                key={issue.title}
-                className="flex items-start gap-3 rounded-lg border bg-background p-4"
+                key={item.label}
+                className="grid gap-2 border-l-4 border-slate-900 bg-[#fbfbf7] p-4 sm:grid-cols-[128px_1fr]"
               >
-                <issue.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                <div>
-                  <h3 className="font-medium">{issue.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {issue.description}
-                  </p>
-                </div>
+                <div className="font-semibold">{item.label}</div>
+                <div className="text-sm leading-6 text-slate-600">{item.text}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="container px-4 py-16 md:px-6">
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold">这个 agent 怎么工作</h2>
-          <p className="mt-2 text-muted-foreground">
-            它不是替你做决定，而是把风险、证据和下一步问题整理出来。
+      <section className="container grid gap-6 px-4 py-10 md:px-6 lg:grid-cols-3">
+        <div className="border border-red-200 bg-red-50 p-4 text-red-950">
+          <ShieldAlert className="mb-3 h-6 w-6" />
+          <h3 className="font-semibold">不能漏报的情况</h3>
+          <p className="mt-2 text-sm leading-6">
+            先交钱、代收转账、加密货币充值、学生签明显超时、低于全国最低基准。
           </p>
         </div>
-
-        <div className="mx-auto grid max-w-3xl gap-8 md:grid-cols-3">
-          {[
-            {
-              step: "1",
-              title: "输入岗位信息",
-              description:
-              "填写招聘渠道、工资、工时、付款方式、材料要求和你现在的现金压力。",
-            },
-            {
-              step: "2",
-              title: "拆分风险类型",
-              description:
-              "系统把诈骗、工资权益、证据缺口、签证工时和现实可行性分开判断。",
-            },
-            {
-              step: "3",
-              title: "得到行动建议",
-              description:
-              "输出继续策略、要问雇主的问题、保护措施和更低风险的同类搜索方向。",
-            },
-          ].map((item) => (
-            <div key={item.step} className="text-center">
-              <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-                {item.step}
-              </div>
-              <h3 className="mb-2 font-semibold">{item.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {item.description}
-              </p>
-            </div>
-          ))}
+        <div className="border border-amber-200 bg-amber-50 p-4 text-amber-950">
+          <AlertTriangle className="mb-3 h-6 w-6" />
+          <h3 className="font-semibold">必须说清的限制</h3>
+          <p className="mt-2 text-sm leading-6">
+            工具不能替代 Fair Work、VEVO、律师或 migration agent；也不能自动证明雇主违法。
+          </p>
+        </div>
+        <div className="border border-teal-200 bg-teal-50 p-4 text-teal-950">
+          <FileSearch className="mb-3 h-6 w-6" />
+          <h3 className="font-semibold">下一步产品化</h3>
+          <p className="mt-2 text-sm leading-6">
+            扩充真实案例集、接入 award rate 查询、OCR 证据抽取、雇主 ABN/官网验证和评估报表。
+          </p>
         </div>
       </section>
 
-      <section className="border-t bg-primary text-primary-foreground">
-        <div className="container flex flex-col items-center gap-4 px-4 py-16 text-center md:px-6">
-          <h2 className="text-3xl font-bold">手上有兼职机会要判断吗？</h2>
-          <p className="max-w-md text-primary-foreground/80">
-            先用兼职机会判断；如果你已经开始上班，再用工作权益体检做更完整的检查。
-          </p>
-          <Button size="lg" variant="secondary">
-            <Link href="/opportunity" className="flex items-center">
-              判断这个机会
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </section>
-
-      <footer className="border-t">
-        <div className="container flex flex-col items-center gap-4 px-4 py-8 text-center text-sm text-muted-foreground md:px-6">
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="container flex flex-col gap-3 px-4 py-6 text-sm text-slate-600 md:px-6">
           <p>
-            这个工具只提供一般信息，不构成法律建议。具体法律建议请咨询合资格律师，或联系 Fair Work Ombudsman：
-            <a href="tel:131394" className="underline">
+            只提供一般信息，不构成法律建议。具体问题请联系 Fair Work Ombudsman：
+            <a href="tel:131394" className="font-medium underline">
               13 13 94
             </a>
-            .
+            。
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <a
               href="https://www.fairwork.gov.au"
               className="underline"
@@ -269,17 +285,16 @@ export default function Home() {
               工资计算器
             </a>
             <a
-              href="https://www.ato.gov.au/businesses-and-organisations/super-for-employers"
+              href="https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams"
               className="underline"
               target="_blank"
               rel="noopener noreferrer"
             >
-              ATO 养老金
+              Scamwatch 求职诈骗
             </a>
           </div>
-          <p>© {new Date().getFullYear()} AU-Partimer.</p>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
