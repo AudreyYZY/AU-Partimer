@@ -36,13 +36,13 @@ export default function HealthCheckPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to process health check");
+        throw new Error("暂时无法处理这次权益体检");
       }
 
       const data = await response.json();
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "发生了未知错误");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +60,7 @@ export default function HealthCheckPage() {
           className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to options
+          返回工具选择
         </Link>
       </div>
 
@@ -93,16 +93,16 @@ function ResultsView({
     <div className="container px-4 py-8 md:px-6 md:py-12">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Your Workplace Health Check</h1>
+        <h1 className="text-3xl font-bold">你的工作权益体检结果</h1>
         <p className="mt-2 text-muted-foreground">
-          Review the findings below and take action on any issues identified.
+          查看下面的风险项，并优先处理严重或高优先级问题。
         </p>
       </div>
 
       {/* Summary Card */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Summary</CardTitle>
+          <CardTitle>摘要</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">{result.summary}</p>
@@ -114,7 +114,7 @@ function ResultsView({
                     {criticalCount}
                   </span>
                   <span className="ml-2 text-sm text-red-800">
-                    Critical Issues
+                    严重问题
                   </span>
                 </div>
               )}
@@ -124,7 +124,7 @@ function ResultsView({
                     {highCount}
                   </span>
                   <span className="ml-2 text-sm text-orange-800">
-                    High Priority
+                    高优先级
                   </span>
                 </div>
               )}
@@ -135,14 +135,14 @@ function ResultsView({
 
       {/* Findings */}
       <div className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">Findings</h2>
+        <h2 className="mb-4 text-2xl font-semibold">发现的问题</h2>
         <FindingsList findings={result.findings} defaultExpanded={false} />
       </div>
 
       {/* Next Steps */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Recommended Next Steps</CardTitle>
+          <CardTitle>建议下一步</CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="space-y-3">
@@ -161,7 +161,7 @@ function ResultsView({
       {/* Resources */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Helpful Resources</CardTitle>
+          <CardTitle>有用资源</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2">
@@ -199,10 +199,10 @@ function ResultsView({
       {/* Actions */}
       <div className="flex gap-4">
         <Button variant="outline" onClick={onReset}>
-          Start New Check
+          重新检查
         </Button>
         <Button>
-          <Link href="/">Return Home</Link>
+          <Link href="/">返回首页</Link>
         </Button>
       </div>
     </div>

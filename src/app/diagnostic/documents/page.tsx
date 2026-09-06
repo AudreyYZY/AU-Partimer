@@ -29,13 +29,13 @@ export default function DocumentsPage() {
       "image/webp",
     ];
     if (!allowedTypes.includes(file.type)) {
-      setError("Please upload a PDF or image file (PNG, JPG, WEBP)");
+      setError("请上传 PDF 或图片文件（PNG、JPG、WEBP）");
       return;
     }
 
     // Check file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
-      setError("File size must be less than 10MB");
+      setError("文件大小需要小于 10MB");
       return;
     }
 
@@ -78,7 +78,7 @@ export default function DocumentsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Upload failed");
+        throw new Error("上传失败");
       }
 
       const data = await response.json();
@@ -87,7 +87,7 @@ export default function DocumentsPage() {
         message: data.message,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : "上传失败");
     } finally {
       setIsUploading(false);
     }
@@ -101,20 +101,20 @@ export default function DocumentsPage() {
           className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to options
+          返回工具选择
         </Link>
       </div>
 
       <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold">Document Analysis</h1>
+        <h1 className="text-3xl font-bold">文件材料检查</h1>
         <p className="mt-2 text-muted-foreground">
-          Upload a payslip, contract, screenshot, or message for analysis.
+          上传工资单、合同、截图或招聘材料，先提取关键信息，再检查潜在风险。
         </p>
       </div>
 
       <Card className="mx-auto max-w-2xl">
         <CardHeader>
-          <CardTitle>Upload Document</CardTitle>
+          <CardTitle>上传材料</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Drop Zone */}
@@ -147,17 +147,17 @@ export default function DocumentsPage() {
                   size="sm"
                   onClick={() => setFile(null)}
                 >
-                  Remove
+                  移除
                 </Button>
               </div>
             ) : (
               <>
                 <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
                 <p className="mb-2 text-sm font-medium">
-                  Drag and drop your document here
+                  把文件拖到这里
                 </p>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  PDF, PNG, JPG, WEBP — max 10MB
+                  支持 PDF、PNG、JPG、WEBP，最大 10MB
                 </p>
                 <label>
                   <input
@@ -167,7 +167,7 @@ export default function DocumentsPage() {
                     className="hidden"
                   />
                   <Button variant="outline" size="sm">
-                    Choose File
+                    选择文件
                   </Button>
                 </label>
               </>
@@ -189,13 +189,16 @@ export default function DocumentsPage() {
 
           {/* Supported document types */}
           <div className="mt-6">
-            <h4 className="mb-2 text-sm font-medium">What we can check:</h4>
+            <h4 className="mb-2 text-sm font-medium">这个模式目前能检查：</h4>
             <ul className="space-y-1 text-sm text-muted-foreground">
-              <li>• Payslips — check for correct rates, super, deductions</li>
-              <li>• Employment contracts — identify concerning clauses</li>
-              <li>• Messages — evidence of workplace arrangements</li>
-              <li>• Rosters — verify hours and shifts</li>
+              <li>• 工资单：工资、养老金、扣款和发薪记录</li>
+              <li>• 合同：岗位、工资、试用期和可疑条款</li>
+              <li>• 聊天记录：雇主承诺、排班和付款安排</li>
+              <li>• 招聘广告：工资、地点、职责和诈骗信号</li>
             </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              MVP 阶段只完成上传与基础反馈；PDF/图片 OCR 和深度文件解析还需要继续开发。
+            </p>
           </div>
 
           {/* Submit Button */}
@@ -207,10 +210,10 @@ export default function DocumentsPage() {
             {isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
+                处理中...
               </>
             ) : (
-              "Analyze Document"
+              "检查文件"
             )}
           </Button>
         </CardContent>
@@ -218,8 +221,7 @@ export default function DocumentsPage() {
 
       <div className="mt-6 text-center">
         <p className="text-xs text-muted-foreground">
-          Your document is processed securely and is not stored permanently.
-          This is a diagnostic tool, not legal advice.
+          这是诊断工具，不是法律建议。MVP 阶段不会长期保存上传材料。
         </p>
       </div>
     </div>

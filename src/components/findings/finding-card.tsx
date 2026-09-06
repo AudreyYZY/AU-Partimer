@@ -61,7 +61,7 @@ export function FindingCard({
 
           {/* Full Explanation */}
           <div className="mb-4">
-            <h4 className="mb-2 text-sm font-semibold">What this means</h4>
+            <h4 className="mb-2 text-sm font-semibold">这是什么意思</h4>
             <p className="text-sm text-muted-foreground">
               {finding.explanation}
             </p>
@@ -70,7 +70,7 @@ export function FindingCard({
           {/* Legal Basis */}
           {finding.legalRef && (
             <div className="mb-4">
-              <h4 className="mb-2 text-sm font-semibold">Legal basis</h4>
+              <h4 className="mb-2 text-sm font-semibold">依据来源</h4>
               <p className="text-sm text-muted-foreground">
                 {finding.legalRef}
               </p>
@@ -79,7 +79,7 @@ export function FindingCard({
 
           {/* Recommended Action */}
           <div className="mb-4">
-            <h4 className="mb-2 text-sm font-semibold">What you should do</h4>
+            <h4 className="mb-2 text-sm font-semibold">建议怎么做</h4>
             <p className="text-sm text-muted-foreground">
               {finding.recommendedAction}
             </p>
@@ -89,7 +89,7 @@ export function FindingCard({
           {finding.evidenceToCollect.length > 0 && (
             <div className="mb-4">
               <h4 className="mb-2 text-sm font-semibold">
-                Evidence to collect
+                建议收集的证据
               </h4>
               <EvidenceChecklist items={finding.evidenceToCollect} />
             </div>
@@ -98,7 +98,7 @@ export function FindingCard({
           {/* Fair Work Link */}
           <div className="rounded-lg bg-muted p-3">
             <p className="text-sm">
-              Need help? Contact the{" "}
+              需要帮助？可以联系{" "}
               <a
                 href="https://www.fairwork.gov.au"
                 target="_blank"
@@ -108,7 +108,7 @@ export function FindingCard({
                 Fair Work Ombudsman
                 <ExternalLink className="h-3 w-3" />
               </a>{" "}
-              on <strong>13 13 94</strong> for free advice.
+              ：<strong>13 13 94</strong>。
             </p>
           </div>
         </CardContent>

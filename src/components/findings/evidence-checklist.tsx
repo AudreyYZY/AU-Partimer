@@ -60,7 +60,7 @@ export function EvidenceChecklist({ items, onItemToggle }: EvidenceChecklistProp
       })}
       {checkedItems.size > 0 && (
         <p className="text-xs text-muted-foreground pt-1">
-          {checkedItems.size} of {items.length} items checked
+          已勾选 {checkedItems.size} / {items.length} 项
         </p>
       )}
     </div>

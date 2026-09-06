@@ -49,17 +49,17 @@ const WAGE_RULES: StoredRule[] = [
       type: "UNDERPAYMENT",
       params: {
         severity: "CRITICAL",
-        title: "Possible Underpayment - Below Current Minimum Wage Benchmark",
+        title: "可能低于当前最低工资基准",
         explanationTemplate:
-          `Your hourly rate of $\${hourlyRate} appears to be below the current adult national minimum wage benchmark of $${NATIONAL_MIN_WAGE_HOURLY.toFixed(2)} per hour (from ${NATIONAL_MIN_WAGE_EFFECTIVE_FROM}). Exact pay can depend on award coverage, age, classification, and duties.`,
+          `你填写的时薪 \${hourlyRate} 低于当前成人全国最低工资基准 $${NATIONAL_MIN_WAGE_HOURLY.toFixed(2)}/h（${NATIONAL_MIN_WAGE_EFFECTIVE_FROM} 起）。具体最低应付工资还需要结合 award 覆盖、年龄、等级、职责和排班核对。`,
         legalRef: "Fair Work Act 2009, s.284-294; National Minimum Wage Order 2026",
         recommendedAction:
-          "Confirm your award, age-based rate, and classification using the Fair Work Pay Calculator before treating this as a final underpayment conclusion.",
+          "先用 Fair Work Pay Calculator 核对 award、年龄工资和岗位等级，再把它作为最终欠薪结论。",
         evidenceToCollect: [
-          "Bank statements showing wage payments",
-          "Roster or shift records",
-          "Messages about pay rates",
-          "Any written agreement about pay",
+          "显示工资到账的银行记录",
+          "排班表或工时记录",
+          "关于工资标准的聊天记录",
+          "任何工资相关书面协议",
         ],
       },
     },
@@ -81,17 +81,17 @@ const WAGE_RULES: StoredRule[] = [
       type: "UNDERPAYMENT",
       params: {
         severity: "CRITICAL",
-        title: "Possible Underpayment - Casual Rate Below Current Benchmark",
+        title: "可能低于当前 casual 工资基准",
         explanationTemplate:
-          `Your casual hourly rate of $\${hourlyRate} appears below the current adult national casual minimum benchmark of $${NATIONAL_MIN_WAGE_CASUAL_HOURLY.toFixed(2)}/hr, which includes 25% casual loading. Exact award rates can depend on age, classification, and duties.`,
+          `你填写的 casual 时薪 \${hourlyRate} 低于当前成人 casual 全国最低基准 $${NATIONAL_MIN_WAGE_CASUAL_HOURLY.toFixed(2)}/h，该基准包含 25% casual loading。具体 award rate 还需要结合年龄、岗位等级、职责和排班核对。`,
         legalRef: "Fair Work Act 2009; Modern Award casual loading provisions",
         recommendedAction:
-          "Check the award and classification. Casual employees usually receive a base rate plus casual loading, but the exact minimum rate needs official pay calculator verification.",
+          "核对适用 award 和岗位等级。Casual 通常应包含 loading，但准确最低工资需要用官方工资计算器确认。",
         evidenceToCollect: [
-          "Bank statements showing payments",
-          "Roster showing hours worked",
-          "Messages discussing your pay rate",
-          "Any contract or offer letter",
+          "显示工资到账的银行记录",
+          "显示工时的排班表",
+          "讨论工资标准的聊天记录",
+          "合同或 offer letter",
         ],
       },
     },
@@ -118,17 +118,17 @@ const SUPER_RULES: StoredRule[] = [
       type: "MISSING_SUPER",
       params: {
         severity: "CRITICAL",
-        title: "Possible Missing Superannuation",
+        title: "可能缺少养老金",
         explanationTemplate:
-          `Your employer may not be paying mandatory superannuation. The current super guarantee rate is ${(SUPER_GUARANTEE_RATE_CURRENT * 100).toFixed(0)}% of eligible earnings. Check your payslip, super fund, or myGov to verify contributions.`,
+          `雇主可能没有为你支付应有养老金。当前 super guarantee 为符合条件收入的 ${(SUPER_GUARANTEE_RATE_CURRENT * 100).toFixed(0)}%。请通过工资单、super fund 或 myGov 核对到账。`,
         legalRef: "Superannuation Guarantee (Administration) Act 1992",
         recommendedAction:
-          "Check your super account (myGov/ATO). Ask your employer about super contributions. If unpaid, you can report to the ATO.",
+          "检查你的 super 账户（myGov/ATO）并向雇主书面询问。如确认未支付，可以向 ATO 查询或报告。",
         evidenceToCollect: [
-          "Payslips showing (or not showing) super contributions",
-          "Super account statements from your fund",
-          "Employment contract or offer letter",
-          "Bank statements showing gross pay",
+          "显示或未显示养老金的工资单",
+          "super fund 账户记录",
+          "雇佣合同或 offer letter",
+          "显示税前工资的银行记录",
         ],
       },
     },
@@ -155,17 +155,17 @@ const PAYSLIP_RULES: StoredRule[] = [
       type: "PAYSLIP_VIOLATION",
       params: {
         severity: "HIGH",
-        title: "No Payslips Provided",
+        title: "没有提供工资单",
         explanationTemplate:
-          "Your employer is required to issue payslips within one working day of paying you. Not providing payslips is a breach of the Fair Work Act.",
+          "雇主通常需要在发薪日后 1 个工作日内提供工资单。不提供工资单会让工资、工时、税和养老金都更难核对。",
         legalRef: "Fair Work Act 2009, Section 536",
         recommendedAction:
-          "Request payslips from your employer in writing (email/text). Keep records of the request. If refused, contact the Fair Work Ombudsman.",
+          "用邮件或短信向雇主索要工资单，并保存请求记录。如果被拒绝，可联系 Fair Work Ombudsman。",
         evidenceToCollect: [
-          "Messages requesting payslips",
-          "Bank statements showing payments received",
-          "Roster or shift records",
-          "Any written communication about your employment",
+          "索要工资单的聊天或邮件记录",
+          "显示收款的银行记录",
+          "排班表或工时记录",
+          "任何关于雇佣关系的书面沟通",
         ],
       },
     },
@@ -192,17 +192,17 @@ const TRIAL_RULES: StoredRule[] = [
       type: "ILLEGAL_TRIAL",
       params: {
         severity: "CRITICAL",
-        title: "Possible Unpaid Trial Exploitation",
+        title: "可能存在无薪试工风险",
         explanationTemplate:
-          "Your trial shift of ${trialShiftHours} hours without pay needs careful checking. A short unpaid trial may be allowed only when it is genuinely needed to demonstrate skills and is directly supervised. Longer or productive work may need to be paid.",
+          "你填写的无薪试工/培训为 ${trialShiftHours} 小时，需要谨慎核查。短时间无薪试工只有在真正用于展示技能且被直接监督时才可能合理；较长或实际产生劳动成果的工作可能需要付薪。",
         legalRef: "Fair Work Act 2009; Fair Work Ombudsman Guidance on Work Trials",
         recommendedAction:
-          "Keep written evidence of the trial length, tasks, supervision, and outcome. Check the Fair Work unpaid trial guidance or contact Fair Work before treating it as unpaid work.",
+          "保存试工时长、任务、监督方式和结果的证据。先查 Fair Work 无薪试工指引，必要时联系 Fair Work。",
         evidenceToCollect: [
-          "Messages about the trial shift arrangement",
-          "Roster showing trial shift times",
-          "Any evidence of work performed during trial",
-          "Witness statements from other workers",
+          "关于试工安排的聊天记录",
+          "显示试工时间的排班或通知",
+          "试工期间实际工作的证据",
+          "其他员工或现场人员的说明",
         ],
       },
     },
@@ -224,17 +224,17 @@ const TRIAL_RULES: StoredRule[] = [
       type: "ILLEGAL_TRIAL",
       params: {
         severity: "CRITICAL",
-        title: "Multiple Unpaid Trial Shifts",
+        title: "多次无薪试工",
         explanationTemplate:
-          "Multiple unpaid trial shifts are a serious warning sign because repeated or productive work is less likely to be a genuine short skills demonstration.",
+          "多次无薪试工是明显风险信号，因为重复或产生劳动成果的工作更不像单纯展示技能。",
         legalRef: "Fair Work Act 2009; Fair Work Ombudsman Guidance on Work Trials",
         recommendedAction:
-          "Keep records of all trial shifts worked. You may be entitled to back pay at the applicable award rate.",
+          "保存所有试工记录。若这些班次应被视为工作，你可能需要按适用 award rate 追讨工资。",
         evidenceToCollect: [
-          "Messages about each trial shift",
-          "Roster or schedule showing trial shifts",
-          "Evidence of work performed",
-          "Any communication about potential employment",
+          "每次试工的聊天记录",
+          "显示试工时间的排班或安排",
+          "实际工作的证据",
+          "关于录用可能性的沟通记录",
         ],
       },
     },
@@ -260,17 +260,17 @@ const HOURS_RULES: StoredRule[] = [
       type: "OVERTIME_CONCERN",
       params: {
         severity: "MEDIUM",
-        title: "Working More Than 38 Hours Per Week",
+        title: "每周工时超过 38 小时",
         explanationTemplate:
-          "You report working ${weeklyHours} hours per week. The standard maximum ordinary hours are 38 per week, but overtime and penalty rules depend on the applicable award, agreement, and roster pattern.",
+          "你填写每周工作 ${weeklyHours} 小时。标准 ordinary hours 通常是每周 38 小时，但加班费和 penalty rules 需要结合适用 award、协议和排班模式核对。",
         legalRef: "Fair Work Act 2009, Section 62 (National Employment Standards)",
         recommendedAction:
-          "Check if you're being paid overtime rates for hours beyond 38 per week. Keep records of all hours worked.",
+          "核对超过 38 小时的部分是否需要加班费，并保存全部工时记录。",
         evidenceToCollect: [
-          "Timesheets or time records",
-          "Roster showing scheduled hours",
-          "Bank statements to verify pay matches hours",
-          "Messages about extra shifts or hours",
+          "工时表或自己的工时记录",
+          "显示排班的 roster",
+          "用于核对工资和工时的银行记录",
+          "关于额外班次或加班的聊天记录",
         ],
       },
     },
@@ -298,17 +298,17 @@ const VISA_RULES: StoredRule[] = [
       type: "VISA_RISK",
       params: {
         severity: "HIGH",
-        title: "Possible Visa Work Hour Breach",
+        title: "学生签工时可能超限",
         explanationTemplate:
-          "You report working ${weeklyHours} hours per week on a Student visa (subclass 500) during a study period. Student visa work limits are counted across a rolling 14-day fortnight, so check the exact roster rather than relying only on a weekly average.",
+          "你填写在学生签 500 且上课期间每周工作 ${weeklyHours} 小时。学生签工时限制按连续 14 天周期计算，不能只看简单周平均，需要核对完整排班。",
         legalRef: "Migration Regulations 1994, Schedule 8, Condition 8104",
         recommendedAction:
-          "Check your visa conditions. Reduce your hours to comply with the 48-hour fortnightly limit during study periods. Seek immigration advice if concerned.",
+          "核对你的签证条件。上课期间通常需要控制在 14 天工时限制内；如担心合规风险，请考虑寻求移民建议。",
         evidenceToCollect: [
-          "Roster showing all shifts",
-          "Timesheet records",
-          "Pay slips showing hours worked",
-          "University enrollment confirmation",
+          "显示所有班次的 roster",
+          "工时记录",
+          "显示工时的工资单",
+          "学校 enrolment 或上课期间证明",
         ],
       },
     },
@@ -335,17 +335,17 @@ const CASH_RULES: StoredRule[] = [
       type: "CASH_PAYMENT_RISK",
       params: {
         severity: "HIGH",
-        title: "Cash Payment Without Records",
+        title: "现金付款但没有记录",
         explanationTemplate:
-          "Being paid in cash without receiving payslips is a significant concern. This arrangement may indicate unreported wages, tax avoidance, and makes it difficult to prove your employment terms or claim underpayment.",
+          "如果现金发薪且没有工资单，这是较高风险安排。它可能意味着工资没有正式记录，也会让你之后证明雇佣关系、工时或欠薪更困难。",
         legalRef: "Fair Work Act 2009; Taxation Administration Act 1953",
         recommendedAction:
-          "Request payslips and a written employment agreement. Keep your own records of hours worked and payments received. Consider seeking advice from the Fair Work Ombudsman.",
+          "要求工资单和书面雇佣确认。自己记录工时和收款情况，必要时联系 Fair Work Ombudsman。",
         evidenceToCollect: [
-          "Your own records of hours worked (diary, photos of rosters)",
-          "Bank deposit records if cash is deposited",
-          "Messages about pay arrangements",
-          "Any documentation of your employment",
+          "自己的工时记录（日记、排班照片等）",
+          "如果现金存入银行，保存存款记录",
+          "关于发薪安排的聊天记录",
+          "任何能证明雇佣关系的材料",
         ],
       },
     },

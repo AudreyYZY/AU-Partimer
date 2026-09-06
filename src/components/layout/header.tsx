@@ -15,19 +15,19 @@ export function Header() {
             href="/opportunity"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Check Job
+            判断兼职
           </Link>
           <Link
             href="/diagnostic"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Start Check
+            选择工具
           </Link>
           <Link
             href="/about"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            About
+            关于
           </Link>
         </nav>
       </div>

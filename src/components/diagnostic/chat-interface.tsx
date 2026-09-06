@@ -52,14 +52,16 @@ export function ChatInterface({ flowType, systemMessage }: ChatInterfaceProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Chat request failed");
+        throw new Error("聊天请求失败");
       }
 
       const content = await response.text();
       const assistantMessage: Message = {
         id: `assistant_${Date.now()}`,
         role: "assistant",
-        content: content || "I'm processing your request...",
+        content:
+          content.trim() ||
+          "AI 分析服务暂时不可用。请检查 MIMO_API_KEY / MIMO_BASE_URL 配置，或稍后再试。",
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -68,7 +70,7 @@ export function ChatInterface({ flowType, systemMessage }: ChatInterfaceProps) {
       const errorMessage: Message = {
         id: `error_${Date.now()}`,
         role: "assistant",
-        content: "I'm sorry, I encountered an error. Please try again.",
+        content: "抱歉，刚才处理失败了。请稍后再试一次。",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -81,8 +83,8 @@ export function ChatInterface({ flowType, systemMessage }: ChatInterfaceProps) {
       <CardHeader className="border-b px-4 py-3">
         <CardTitle className="text-lg">
           {flowType === "SITUATION_ANALYZER"
-            ? "Situation Analyzer"
-            : "Document Analysis"}
+            ? "具体情况分析"
+            : "文件材料检查"}
         </CardTitle>
       </CardHeader>
 
@@ -157,7 +159,7 @@ export function ChatInterface({ flowType, systemMessage }: ChatInterfaceProps) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe your situation..."
+            placeholder="描述你遇到的情况..."
             disabled={isLoading}
             className="flex-1"
           />

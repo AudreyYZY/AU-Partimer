@@ -52,8 +52,8 @@ const healthCheckSchema = z.object({
     "other",
   ]),
   employmentType: z.enum(["full_time", "part_time", "casual"]),
-  hourlyRate: z.number().min(0, "Hourly rate must be positive"),
-  weeklyHours: z.number().min(0, "Hours must be positive"),
+  hourlyRate: z.number().min(0, "时薪不能为负数"),
+  weeklyHours: z.number().min(0, "工时不能为负数"),
   paymentMethod: z.enum(["cash", "bank", "mixed"]),
   hasPayslip: z.boolean(),
   hasSuper: z.boolean(),
@@ -71,9 +71,9 @@ interface HealthCheckFormProps {
 }
 
 const STEPS = [
-  { title: "Location & Work", description: "Where and what type of work" },
-  { title: "Pay & Hours", description: "Your pay rate and hours" },
-  { title: "Entitlements", description: "Payslips, super, and trial shifts" },
+  { title: "地点与工作", description: "工作地点和岗位类型" },
+  { title: "工资与工时", description: "时薪、工时和付款方式" },
+  { title: "权益记录", description: "工资单、养老金和试工" },
 ];
 
 export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps) {
@@ -120,9 +120,9 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
   return (
     <Card className="mx-auto max-w-2xl">
       <CardHeader>
-        <CardTitle>Employment Health Check</CardTitle>
+        <CardTitle>工作权益体检</CardTitle>
         <CardDescription>
-          Answer these questions about your job. All information is anonymous.
+          回答几个关于现有工作的结构化问题，系统会检查常见工资和权益风险。
         </CardDescription>
         {/* Progress */}
         <div className="pt-4">
@@ -158,14 +158,14 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Which state do you work in?</FormLabel>
+                      <FormLabel>你在哪个州工作？</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select state" />
+                            <SelectValue placeholder="选择州" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -186,30 +186,30 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   name="visaType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>What is your visa status?</FormLabel>
+                      <FormLabel>你的签证/身份状态是？</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select visa type" />
+                            <SelectValue placeholder="选择签证/身份" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="none">
-                            Australian citizen / permanent resident
+                            澳大利亚公民 / 永久居民
                           </SelectItem>
                           <SelectItem value="500">
-                            Student visa (subclass 500)
+                            学生签证 500
                           </SelectItem>
                           <SelectItem value="417">
-                            Working Holiday visa (subclass 417)
+                            打工度假签证 417
                           </SelectItem>
                           <SelectItem value="462">
-                            Work and Holiday visa (subclass 462)
+                            打工与度假签证 462
                           </SelectItem>
-                          <SelectItem value="other">Other visa</SelectItem>
+                          <SelectItem value="other">其他签证</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -231,13 +231,10 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>
-                            I am currently in a study period (not on course
-                            break)
+                            现在是上课期间，不是学校假期
                           </FormLabel>
                           <FormDescription>
-                            Student visa holders can work unlimited hours during
-                            scheduled course breaks, but only 48 hours per
-                            fortnight during study periods.
+                            学生签在学校假期通常可以工作更多时间；上课期间需要按连续 14 天周期核对工时限制。
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -250,27 +247,27 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   name="industry"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>What industry do you work in?</FormLabel>
+                      <FormLabel>你在哪个行业工作？</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select industry" />
+                            <SelectValue placeholder="选择行业" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="restaurant">Restaurant</SelectItem>
-                          <SelectItem value="cafe">Café</SelectItem>
-                          <SelectItem value="hotpot">Hotpot</SelectItem>
-                          <SelectItem value="bubble_tea">Bubble Tea</SelectItem>
-                          <SelectItem value="catering">Catering</SelectItem>
-                          <SelectItem value="retail">Retail</SelectItem>
-                          <SelectItem value="cleaning">Cleaning</SelectItem>
-                          <SelectItem value="warehouse">Warehouse</SelectItem>
-                          <SelectItem value="delivery">Delivery</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="restaurant">餐厅</SelectItem>
+                          <SelectItem value="cafe">咖啡店</SelectItem>
+                          <SelectItem value="hotpot">火锅/中餐</SelectItem>
+                          <SelectItem value="bubble_tea">奶茶店</SelectItem>
+                          <SelectItem value="catering">餐饮活动</SelectItem>
+                          <SelectItem value="retail">零售</SelectItem>
+                          <SelectItem value="cleaning">清洁</SelectItem>
+                          <SelectItem value="warehouse">仓库</SelectItem>
+                          <SelectItem value="delivery">外卖/配送</SelectItem>
+                          <SelectItem value="other">其他</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -283,25 +280,24 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   name="employmentType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>What is your employment type?</FormLabel>
+                      <FormLabel>你的雇佣类型是？</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder="选择类型" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="full_time">Full-time</SelectItem>
-                          <SelectItem value="part_time">Part-time</SelectItem>
-                          <SelectItem value="casual">Casual</SelectItem>
+                          <SelectItem value="full_time">全职 Full-time</SelectItem>
+                          <SelectItem value="part_time">兼职 Part-time</SelectItem>
+                          <SelectItem value="casual">临时工 Casual</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Casual workers should receive a 25% loading on top of
-                        the base rate.
+                        Casual 通常应在基础工资之上包含 25% loading。
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -319,7 +315,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        What is your hourly pay rate? (before tax)
+                        你的税前时薪是多少？
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -342,9 +338,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Enter the amount you are paid per hour. The national
-                        minimum wage is $26.44/hr (or $33.05/hr for casual
-                        workers).
+                        填你每小时税前工资。当前全国最低工资基准为 $26.44/h，成人 casual 基准为 $33.05/h。
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -357,7 +351,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        How many hours do you work per week on average?
+                        你平均每周工作多少小时？
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -373,8 +367,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                         />
                       </FormControl>
                       <FormDescription>
-                        Standard full-time is 38 hours per week. Hours beyond
-                        this should be paid at overtime rates.
+                        标准全职工时通常是每周 38 小时；超过部分可能涉及加班费，需要结合 award 或协议核对。
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -386,29 +379,28 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   name="paymentMethod"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>How are you paid?</FormLabel>
+                      <FormLabel>你通常怎么收工资？</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select payment method" />
+                            <SelectValue placeholder="选择付款方式" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="bank">
-                            Bank transfer
+                            银行转账
                           </SelectItem>
-                          <SelectItem value="cash">Cash</SelectItem>
+                          <SelectItem value="cash">现金</SelectItem>
                           <SelectItem value="mixed">
-                            Mix of cash and bank
+                            现金 + 银行转账
                           </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Cash payment without records can make it harder to prove
-                        your employment terms.
+                        如果现金付款没有工资单和记录，之后会更难证明工资和工时。
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -421,7 +413,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        How long have you been working there?
+                        你已经在那里工作多久？
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -437,7 +429,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                             ref={field.ref}
                           />
                           <span className="absolute right-3 top-2.5 text-muted-foreground text-sm">
-                            weeks
+                            周
                           </span>
                         </div>
                       </FormControl>
@@ -464,12 +456,10 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>
-                          I receive payslips from my employer
+                          雇主会给我工资单
                         </FormLabel>
                         <FormDescription>
-                          Employers must provide payslips within 1 working day
-                          of payment. Payslips should show your pay rate, hours,
-                          deductions, and super contributions.
+                          雇主通常需要在发薪日后 1 个工作日内提供工资单。工资单应显示工资、工时、扣款和养老金信息。
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -489,12 +479,10 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>
-                          My employer pays superannuation for me
+                          雇主会为我支付养老金
                         </FormLabel>
                         <FormDescription>
-                          Employers must pay 12% (from 1 July 2026) of your
-                          ordinary time earnings into a super fund. This is on
-                          top of your wages.
+                          当前 super guarantee 为 12%。符合条件时，养老金通常是在工资之外支付到你的 super fund。
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -502,11 +490,9 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                 />
 
                 <div className="rounded-lg border p-4">
-                  <h4 className="mb-3 font-medium">Trial / Training Shifts</h4>
+                  <h4 className="mb-3 font-medium">试工 / 培训班次</h4>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    Some employers ask workers to do unpaid &quot;trial&quot; or &quot;training&quot;
-                    shifts. Short trials (1-4 hours) may be legal, but longer
-                    ones must be paid.
+                    有些雇主会要求无薪“试工”或“培训”。短时间、仅用于展示技能且被监督的试工可能合理；较长或实际产出劳动的班次需要谨慎核查是否应付薪。
                   </p>
 
                   <div className="space-y-3">
@@ -516,8 +502,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            How many hours did you work during trial/training
-                            shifts?
+                            你试工/培训一共做了多少小时？
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -533,7 +518,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter 0 if you did not do any trial shifts.
+                            如果没有试工，填 0。
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -555,7 +540,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                               </FormControl>
                               <div className="space-y-1 leading-none">
                                 <FormLabel>
-                                  My trial shifts were paid
+                                  试工/培训有付薪
                                 </FormLabel>
                               </div>
                             </FormItem>
@@ -575,7 +560,7 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                               </FormControl>
                               <div className="space-y-1 leading-none">
                                 <FormLabel>
-                                  I was asked to do multiple trial shifts
+                                  我被要求做了多次试工
                                 </FormLabel>
                               </div>
                             </FormItem>
@@ -597,12 +582,12 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                 disabled={currentStep === 0}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
+                上一步
               </Button>
 
               {currentStep < STEPS.length - 1 ? (
                 <Button type="button" onClick={handleNext}>
-                  Next
+                  下一步
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
@@ -610,10 +595,10 @@ export function HealthCheckForm({ onSubmit, isSubmitting }: HealthCheckFormProps
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing...
+                      分析中...
                     </>
                   ) : (
-                    "Check My Rights"
+                    "检查我的权益"
                   )}
                 </Button>
               )}

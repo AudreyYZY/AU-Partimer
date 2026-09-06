@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         {
-          error: "Invalid request",
+          error: "请求内容不完整或格式不正确",
           details: parsed.error.issues,
         },
         { status: 400 }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Health check error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "服务器处理失败" },
       { status: 500 }
     );
   }

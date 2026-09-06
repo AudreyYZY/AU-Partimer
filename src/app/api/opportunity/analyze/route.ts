@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid request", details: parsed.error.issues },
+        { error: "请求内容不完整或格式不正确", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Opportunity analysis error:", error);
     return NextResponse.json(
-      { error: "Opportunity analysis failed" },
+      { error: "兼职机会分析失败" },
       { status: 500 }
     );
   }

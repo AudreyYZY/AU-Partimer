@@ -1,41 +1,49 @@
-# AU-Partimer: Part-time Job Risk & Rights Agent
+# AU-Partimer: 澳大利亚兼职风险与权益 Agent
 
-A practical screening tool for Australian part-time workers to decide whether a job opportunity is worth continuing, what to verify first, and how to reduce risk when they still need income.
+AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual workers 和 migrant workers 的风险判断工具。它的目标不是替用户做决定，而是在用户投入时间、交身份信息、开始试工或接受低薪工作前，帮他们把风险、证据缺口和下一步问题整理清楚。
 
-## What It Does
+**这不是法律建议。** 这是一个实用 triage 工具：把用户提供的事实映射到官方来源支持的风险信号、规则检查和保守行动建议。
 
-Helps Australian international students, casual workers, and migrant workers understand:
-- Whether a new part-time opportunity has scam, pay, visa, or documentation risks
-- Whether an existing employment situation contains workplace rights issues
-- Which facts are still missing before they decide to continue
-- What evidence they should collect if they need to start or keep working
-- What lower-risk similar job directions they can search for next
+## 四个模式
 
-**This is NOT legal advice.** It is a practical triage tool that maps user-provided facts to official-source risk signals and conservative next steps.
+### 1. 兼职机会判断
 
-## Core Features
+适合还没入职、刚看到招聘信息、正在决定要不要继续聊或试工的用户。
 
-### 1. Part-time Opportunity Checker
+输出内容：
+- 继续策略：不要继续、先确认再继续、短期过渡但要保护自己、相对可继续
+- 诈骗、工资、工资单、养老金、签证工时和现实可行性风险
+- 开始前应该问雇主的问题
+- 急需收入时的 harm-reduction 保护措施
+- 更低风险的同类岗位搜索方向
+- 中文/英文一键切换
 
-Assess a job offer or trial shift before committing. The checker returns:
-- A decision band: stop, verify first, short-term with safeguards, or proceed
-- Scam and job-quality risk signals
-- Questions to ask the employer before starting
-- Harm-reduction safeguards for users who urgently need income
-- Safer similar job directions to search for
+### 2. 工作权益体检
 
-### 2. Employment Health Check
-Answer structured questions about your job and get a comprehensive diagnostic report with:
-- Findings with severity levels (Critical, High, Medium, Low, Info)
-- Legal basis for each finding
-- Recommended actions
-- Evidence checklist
+适合已经开始工作的用户。通过结构化表单检查现有工作安排。
 
-### 3. Situation Analyzer
-Describe a workplace problem in natural language and get guidance on your rights.
+输出内容：
+- 按严重程度排序的 findings
+- 每个问题的依据、解释、建议行动和证据清单
+- 当前已覆盖：工资低于基准、缺少工资单、缺少养老金、无薪试工、工时、学生签工时、现金无记录
 
-### 4. Document Analysis
-Upload payslips, contracts, or screenshots for analysis. PDF/image OCR is planned; the current MVP validates uploads and supports text extraction for plain text files.
+### 3. 具体情况分析
+
+适合用户遇到某个具体 workplace problem，例如被扣钱、被要求赔偿、突然改排班、威胁辞退。
+
+当前状态：
+- 页面和 prompt 已中文化
+- 依赖 `MIMO_API_KEY` / `MIMO_BASE_URL`
+- 如果 LLM key 无效，会显示服务暂不可用
+
+### 4. 文件材料检查
+
+适合用户有工资单、合同、招聘广告或聊天截图时使用。
+
+当前状态：
+- 已完成上传校验和纯文本提取
+- PDF/图片 OCR、工资单结构化解析、截图证据抽取还未完成
+- 当前不能把文件模式视为完整分析功能
 
 ## Tech Stack
 
@@ -47,25 +55,45 @@ Upload payslips, contracts, or screenshots for analysis. PDF/image OCR is planne
 | UI | Tailwind CSS + shadcn/ui |
 | LLM | Vercel AI SDK + DeepSeek |
 | Rule Engine | json-rules-engine |
-| Auth | Clerk |
+| Auth | Not enabled in MVP |
 | Deployment | Vercel |
 
 ## Architecture
 
 ```
-Opportunity Facts → Decision Engine → Risk Signals → Safeguards → Alternatives
-Workplace Facts → Rule Engine → Findings → Report
+求职前：Opportunity Facts → Decision Engine → Risk Signals → Safeguards → Alternatives
+工作中：Workplace Facts → Rule Engine → Findings → Report
+自然语言：User Situation → LLM Fact Collection → Rule Engine → Explanation
+文件材料：Upload → Validation/Text Extraction → Structured Evidence (planned)
 ```
 
-**Key Principle:** Deterministic rules produce risk signals and findings. The LLM may help collect facts or explain outputs, but it does not create legal authority.
+**核心原则：** 确定性规则负责风险信号和 findings。LLM 只能帮助收集事实、追问和解释结果，不能创造法律依据。
 
-## Reliability Boundaries
+## 可信度边界
 
-- Current wage benchmarks must be kept in sync with official Fair Work updates.
-- Award-specific pay rates depend on age, duties, classification, and coverage; the app points users to official calculators instead of pretending to know every rate.
-- Synthetic or AI-generated case studies are not allowed as legal sources.
-- High-risk scam signals such as upfront payment, crypto top-ups, money transfer work, and early identity-document requests should override ordinary opportunity scoring.
-- If a user has urgent cash pressure and no other options, the product should provide harm-reduction steps instead of simply telling them to reject the job.
+- 高可信：明确诈骗信号、全国最低工资基准、工资单要求、当前 super guarantee、明显证据缺口。
+- 中可信：是否“值得继续”、是否短期过渡、同类岗位替代方向。这些是决策建议，不是法律结论。
+- 低可信或未完成：具体 award rate 精确计算、PDF/图片 OCR、雇主真实性自动验证、个案法律胜算判断。
+- 当前工资基准必须随 Fair Work 更新维护。
+- Award-specific pay rates 取决于年龄、职责、等级、行业覆盖和排班，不能假装只靠一个行业字段就能算准。
+- 合成案例和 AI 生成案例只能用于测试，不能作为法律来源。
+- 先交钱、加密货币充值、代收转账、过早索要身份文件等高风险诈骗信号应覆盖普通评分。
+- 如果用户现金压力高且没有其他机会，产品应提供保护措施和退出条件，而不是简单劝退。
+
+## 评估指标
+
+建议用三类指标衡量这个 agent 是否靠谱：
+
+1. 规则准确率：用人工标注案例测试 STOP / VERIFY_FIRST / SHORT_TERM_WITH_SAFEGUARDS / PROCEED 是否符合专家预期。
+2. 证据完整度：报告是否明确列出缺失事实、来源链接、雇主问题和用户需要保存的证据。
+3. 行动有效性：用户看完后是否知道下一步问什么、查哪里、保存什么、什么情况下退出。
+
+最低上线门槛：
+- 严重诈骗样例不能被判成“可以继续”
+- 学生签明显超时不能被忽略
+- 低于当前全国最低基准不能漏报
+- 没有证据时不能给确定违法结论
+- 现金压力高时必须给短期保护策略，而不是只有拒绝建议
 
 ## Getting Started
 

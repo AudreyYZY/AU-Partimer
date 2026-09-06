@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const tools = {
       submitFacts: {
         description:
-          "Submit collected workplace facts for rule engine analysis. Call this when you have gathered enough information to run a diagnostic.",
+          "Submit collected workplace facts for rule engine analysis. Call this when enough facts are gathered.",
         parameters: extractFactsSchema,
         execute: async (params: Record<string, unknown>) => {
           const facts = paramsToFacts(params as Parameters<typeof paramsToFacts>[0]);
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       },
       lookupAward: {
         description:
-          "Look up the minimum award rate for a specific industry. Use this when checking if a worker's pay rate is correct.",
+          "Look up the conservative wage benchmark for a specific industry.",
         parameters: lookupAwardSchema,
         execute: async (params: Record<string, unknown>) => {
           return await lookupAward(params as Parameters<typeof lookupAward>[0]);
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     return result.toTextStreamResponse();
   } catch (error) {
     console.error("Chat error:", error);
-    return new Response(JSON.stringify({ error: "Chat processing failed" }), {
+    return new Response(JSON.stringify({ error: "聊天分析失败" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -110,43 +110,42 @@ function buildSystemPrompt(flowType?: string): string {
 ${HEALTH_CHECK_INTRO}
 
 Your goal is to collect the following information through a natural conversation:
-1. State or territory
-2. Visa type (student, working holiday, other, or none)
-3. Industry (restaurant, cafe, retail, cleaning, warehouse, etc.)
-4. Employment type (full-time, part-time, casual)
-5. Hourly pay rate
-6. How they are paid (cash or bank transfer)
-7. Whether they receive payslips
-8. Whether their employer pays superannuation
-9. Any trial/training shifts and how long they were
-10. How long they've been employed
-11. Average hours worked per week
+1. 工作州或领地
+2. 签证类型
+3. 行业
+4. 雇佣类型
+5. 税前时薪
+6. 付款方式
+7. 是否有工资单
+8. 是否支付养老金
+9. 是否有试工/培训班次及其时长
+10. 已工作多久
+11. 平均每周工时
 
-Ask questions naturally, one or two at a time. Don't overwhelm the user.
-When you have enough information, call the submitFacts tool to run the diagnostic.`;
+自然追问，每次只问一两个问题。收集到足够信息后，调用 submitFacts 运行规则诊断。`;
 
     case "SITUATION_ANALYZER":
       return `${base}
 
-The user will describe a workplace problem. Your job is to:
-1. Understand the situation
-2. Ask clarifying questions to gather missing context
-3. Determine what workplace rights may be relevant
-4. Call submitFacts with the information you've gathered
-5. Explain the findings in plain English
+用户会描述一个具体工作问题。你的任务是：
+1. 先理解发生了什么
+2. 追问缺失背景
+3. 判断可能涉及哪些工作权益
+4. 在信息足够时调用 submitFacts
+5. 用中文解释发现的问题、证据和下一步
 
-Be empathetic and supportive. The user may be stressed about their situation.`;
+语气要支持、冷静、具体。用户可能正因为工作问题感到压力。`;
 
     case "DOCUMENT_ANALYSIS":
       return `${base}
 
-The user has uploaded a document for analysis. Focus on:
-1. Understanding what type of document it is (payslip, contract, message, etc.)
-2. Extracting relevant employment information
-3. Identifying any red flags or concerns
-4. Running a diagnostic based on the extracted information
+用户上传了文件。重点是：
+1. 判断文件类型，例如工资单、合同、聊天记录、招聘广告
+2. 提取雇主、工资、工时、排班、养老金、扣款等信息
+3. 标记风险和缺失信息
+4. 信息足够时运行规则诊断
 
-Call submitFacts when you've extracted enough information.`;
+提取到足够事实后调用 submitFacts。`;
 
     default:
       return base;

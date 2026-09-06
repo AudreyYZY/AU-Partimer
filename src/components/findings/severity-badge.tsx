@@ -22,31 +22,31 @@ const severityConfig: Record<
   }
 > = {
   CRITICAL: {
-    label: "Critical",
+    label: "严重",
     variant: "destructive",
     className: "bg-red-600 text-white hover:bg-red-700",
     icon: AlertCircle,
   },
   HIGH: {
-    label: "High",
+    label: "高",
     variant: "destructive",
     className: "bg-orange-500 text-white hover:bg-orange-600",
     icon: AlertTriangle,
   },
   MEDIUM: {
-    label: "Medium",
+    label: "中",
     variant: "secondary",
     className: "bg-yellow-500 text-black hover:bg-yellow-600",
     icon: AlertTriangle,
   },
   LOW: {
-    label: "Low",
+    label: "低",
     variant: "outline",
     className: "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300",
     icon: Info,
   },
   INFO: {
-    label: "Info",
+    label: "提示",
     variant: "outline",
     className: "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-300",
     icon: Info,

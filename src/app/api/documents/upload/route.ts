@@ -17,19 +17,19 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ error: "没有上传文件" }, { status: 400 });
     }
 
     if (!ALLOWED_TYPES.has(file.type)) {
       return NextResponse.json(
-        { error: "Unsupported file type" },
+        { error: "暂不支持这个文件类型" },
         { status: 400 }
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "File size must be less than 10MB" },
+        { error: "文件大小需要小于 10MB" },
         { status: 400 }
       );
     }
@@ -44,13 +44,13 @@ export async function POST(request: NextRequest) {
       extractedText,
       analysisAvailable: Boolean(extractedText),
       message: extractedText
-        ? "Text extracted successfully. Rule-based document analysis is the next implementation step."
-        : "File received. PDF/image OCR and document analysis are not enabled in this MVP yet.",
+        ? "已成功提取文本。下一步需要接入规则分析和证据结构化。"
+        : "文件已收到。MVP 阶段还没有启用 PDF/图片 OCR 和深度文件分析。",
     });
   } catch (error) {
     console.error("Document upload error:", error);
     return NextResponse.json(
-      { error: "Document upload failed" },
+      { error: "文件上传失败" },
       { status: 500 }
     );
   }

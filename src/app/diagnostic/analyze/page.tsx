@@ -11,27 +11,25 @@ export default function AnalyzePage() {
           className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to options
+          返回工具选择
         </Link>
       </div>
 
       <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold">Situation Analyzer</h1>
+        <h1 className="text-3xl font-bold">具体情况分析</h1>
         <p className="mt-2 text-muted-foreground">
-          Describe your workplace situation and I&apos;ll help you understand your
-          rights.
+          描述你遇到的具体问题，系统会帮你拆分风险、需要补充的信息和下一步行动。
         </p>
       </div>
 
       <ChatInterface
         flowType="SITUATION_ANALYZER"
-        systemMessage="Hi! I'm here to help you understand your workplace rights. Please describe what's happening at your work — for example, 'My employer wants me to pay for a damaged food order' or 'I think I'm being underpaid'. I'll ask some follow-up questions to understand the full picture."
+        systemMessage="你好！请描述你在工作中遇到的具体情况，例如“老板让我赔损坏的餐品”或“我怀疑工资低于最低标准”。我会先问必要的追问，再帮你整理风险、证据和下一步。"
       />
 
       <div className="mt-6 text-center">
         <p className="text-xs text-muted-foreground">
-          This is a diagnostic tool, not legal advice. For specific legal
-          advice, contact the Fair Work Ombudsman on 13 13 94.
+          这是诊断工具，不是法律建议。具体法律建议请联系 Fair Work Ombudsman：13 13 94。
         </p>
       </div>
     </div>

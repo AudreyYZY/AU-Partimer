@@ -59,7 +59,7 @@ export async function generateReport(
  */
 function generateDeterministicSummary(findings: Finding[]): string {
   if (findings.length === 0) {
-    return "Based on the information provided, no specific issues were identified. However, this does not guarantee that your employment is fully compliant. If you have concerns, contact the Fair Work Ombudsman.";
+    return "根据你提供的信息，暂时没有发现明确问题。但这不代表工作安排一定完全合规；如果你仍然担心，建议联系 Fair Work Ombudsman 核对。";
   }
 
   const criticalCount = findings.filter((f) => f.severity === "CRITICAL").length;
@@ -69,22 +69,16 @@ function generateDeterministicSummary(findings: Finding[]): string {
   const parts: string[] = [];
 
   if (criticalCount > 0) {
-    parts.push(
-      `${criticalCount} critical issue${criticalCount > 1 ? "s" : ""} requiring immediate attention`
-    );
+    parts.push(`${criticalCount} 个需要尽快处理的严重问题`);
   }
   if (highCount > 0) {
-    parts.push(
-      `${highCount} high-priority concern${highCount > 1 ? "s" : ""}`
-    );
+    parts.push(`${highCount} 个高优先级风险`);
   }
   if (mediumCount > 0) {
-    parts.push(
-      `${mediumCount} medium-priority matter${mediumCount > 1 ? "s" : ""}`
-    );
+    parts.push(`${mediumCount} 个中等优先级核查项`);
   }
 
-  return `Your workplace diagnostic identified ${parts.join(", ")}. Review each finding below for details and recommended actions.`;
+  return `这次工作权益体检发现了${parts.join("、")}。请按严重程度查看每一项的说明和建议行动。`;
 }
 
 /**
@@ -95,7 +89,7 @@ function generateDeterministicAssessment(
   facts: WorkplaceFacts
 ): string {
   if (findings.length === 0) {
-    return "No significant issues were identified based on the information provided.";
+    return "根据你提供的信息，暂时没有发现明显严重问题。";
   }
 
   const hasCritical = findings.some((f) => f.severity === "CRITICAL");
@@ -103,27 +97,27 @@ function generateDeterministicAssessment(
 
   if (hasCritical) {
     assessmentParts.push(
-      "Your situation shows signs of potential serious workplace violations. You should take action promptly."
+      "你的情况出现了可能较严重的工作权益风险，建议尽快补证据并核对官方信息。"
     );
   } else {
     assessmentParts.push(
-      "Your situation shows some areas of concern that are worth investigating further."
+      "你的情况有一些值得继续核查的风险点。"
     );
   }
 
   // Add context about what was checked
   const checksPerformed: string[] = [];
-  if (facts.hourlyRate !== undefined) checksPerformed.push("wage rates");
-  if (facts.hasSuper !== undefined) checksPerformed.push("superannuation");
-  if (facts.hasPayslip !== undefined) checksPerformed.push("payslip compliance");
-  if (facts.trialShiftHours !== undefined) checksPerformed.push("trial shift conditions");
-  if (facts.weeklyHours !== undefined) checksPerformed.push("working hours");
+  if (facts.hourlyRate !== undefined) checksPerformed.push("工资水平");
+  if (facts.hasSuper !== undefined) checksPerformed.push("养老金");
+  if (facts.hasPayslip !== undefined) checksPerformed.push("工资单");
+  if (facts.trialShiftHours !== undefined) checksPerformed.push("试工安排");
+  if (facts.weeklyHours !== undefined) checksPerformed.push("工时");
   if (facts.visaType && facts.visaType !== "none")
-    checksPerformed.push("visa work conditions");
+    checksPerformed.push("签证工时条件");
 
   if (checksPerformed.length > 0) {
     assessmentParts.push(
-      `This assessment checked: ${checksPerformed.join(", ")}.`
+      `本次检查覆盖：${checksPerformed.join("、")}。`
     );
   }
 
@@ -139,7 +133,7 @@ function generateNextSteps(findings: Finding[]): string[] {
   // Always include evidence collection
   if (findings.length > 0) {
     steps.push(
-      "Start collecting evidence: keep records of your hours, pay, and any communications with your employer."
+      "先收集证据：保存工时、工资、排班、工资单和与雇主沟通的记录。"
     );
   }
 
@@ -152,42 +146,42 @@ function generateNextSteps(findings: Finding[]): string[] {
 
   if (hasUnderpayment) {
     steps.push(
-      "Use the Fair Work Pay Calculator (calculate.fairwork.gov.au) to check your correct pay rate."
+      "使用 Fair Work Pay Calculator（calculate.fairwork.gov.au）核对你的正确工资。"
     );
   }
 
   if (hasSuper) {
     steps.push(
-      "Check your superannuation account through myGov or your super fund. Report unpaid super to the ATO."
+      "通过 myGov 或你的 super fund 核对养老金到账情况；如未支付，可向 ATO 查询或报告。"
     );
   }
 
   if (hasPayslip) {
     steps.push(
-      "Request payslips from your employer in writing. Keep a copy of the request."
+      "用文字向雇主索要工资单，并保存这次请求的记录。"
     );
   }
 
   if (hasTrial) {
     steps.push(
-      "Document all hours worked during trial shifts. You may be entitled to back pay."
+      "记录所有试工/培训工时；如果实际提供了劳动，可能需要追讨工资。"
     );
   }
 
   if (hasVisa) {
     steps.push(
-      "Review your visa conditions carefully. Consider seeking immigration advice if concerned about compliance."
+      "仔细核对签证条件；如果担心合规风险，考虑寻求移民建议。"
     );
   }
 
   // Always include Fair Work contact
   steps.push(
-    "Contact the Fair Work Ombudsman on 13 13 94 for free advice about your situation."
+    "联系 Fair Work Ombudsman（13 13 94）获取免费信息和进一步指引。"
   );
 
   // Add translation service for non-English speakers
   steps.push(
-    "If you need help in another language, use the Translating and Interpreting Service on 13 14 50."
+    "如果需要中文或其他语言帮助，可使用 Translating and Interpreting Service：13 14 50。"
   );
 
   return steps;
@@ -259,7 +253,7 @@ function gatherResources(
  * Get the standard disclaimer text
  */
 function getDisclaimer(): string {
-  return "This report is generated by a diagnostic tool and does not constitute legal advice. The information provided is based on general Australian employment law and may not account for all circumstances. For specific legal advice, please consult a qualified lawyer or contact the Fair Work Ombudsman on 13 13 94.";
+  return "这份报告由诊断工具生成，不构成法律建议。内容基于澳大利亚雇佣法的一般信息，可能无法覆盖你的全部具体情况。具体法律建议请咨询合资格律师，或联系 Fair Work Ombudsman：13 13 94。";
 }
 
 /**
