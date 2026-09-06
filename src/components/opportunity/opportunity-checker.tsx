@@ -70,10 +70,17 @@ const initialState: FormState = {
 };
 
 const decisionStyles = {
-  STOP: "border-red-300 bg-red-50 text-red-900",
-  VERIFY_FIRST: "border-amber-300 bg-amber-50 text-amber-950",
-  SHORT_TERM_WITH_SAFEGUARDS: "border-blue-300 bg-blue-50 text-blue-950",
-  PROCEED: "border-green-300 bg-green-50 text-green-950",
+  STOP: "border-red-500 bg-red-50 text-red-950",
+  VERIFY_FIRST: "border-amber-500 bg-amber-50 text-amber-950",
+  SHORT_TERM_WITH_SAFEGUARDS: "border-sky-500 bg-sky-50 text-sky-950",
+  PROCEED: "border-emerald-500 bg-emerald-50 text-emerald-950",
+} as const;
+
+const decisionAccentStyles = {
+  STOP: "bg-red-500",
+  VERIFY_FIRST: "bg-amber-500",
+  SHORT_TERM_WITH_SAFEGUARDS: "bg-sky-500",
+  PROCEED: "bg-emerald-500",
 } as const;
 
 const riskBandStyles = {
@@ -216,6 +223,11 @@ const copy = {
   },
 } as const;
 
+const sectionLabels = {
+  zh: ["身份与限制", "岗位和工资", "工资记录", "现实约束", "红旗信号"],
+  en: ["Status", "Role and pay", "Records", "Practical pressure", "Red flags"],
+} as const;
+
 const optionLabels = {
   zh: {
     visaType: {
@@ -342,6 +354,7 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
   const [error, setError] = useState<string | null>(null);
   const t = copy[language];
   const labels = optionLabels[language];
+  const sectionCopy = sectionLabels[language];
   const studyPeriodId = useId();
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -372,16 +385,38 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <BriefcaseBusiness className="h-5 w-5" />
-            {t.formTitle}
-          </CardTitle>
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(390px,1.08fr)]">
+      <Card className="rounded-lg border-slate-900 bg-[#fbfbf7] py-0 shadow-[8px_8px_0_rgba(15,23,42,0.10)]">
+        <CardHeader className="border-b border-slate-200 bg-white px-0 py-0">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </div>
+            <span className="text-xs font-medium text-slate-500">AU-PARTIMER</span>
+          </div>
+          <div className="grid gap-4 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center">
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-950">
+              <BriefcaseBusiness className="h-5 w-5 text-teal-700" />
+              {t.formTitle}
+            </CardTitle>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              {sectionCopy.slice(0, 4).map((label, index) => (
+                <span key={label} className="hidden items-center gap-1 sm:flex">
+                  <span className="flex h-5 w-5 items-center justify-center border border-slate-300 bg-slate-50 text-[10px] font-semibold text-slate-700">
+                    {index + 1}
+                  </span>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <section className="grid gap-4 sm:grid-cols-2">
+        <CardContent className="space-y-7 p-5">
+          <section className="space-y-3">
+            <SectionMarker index={1} label={sectionCopy[0]} />
+            <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
               label={t.fields.state}
               value={form.state}
@@ -408,11 +443,14 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
                 </Label>
               </div>
             )}
+            </div>
           </section>
 
-          <Separator />
+          <Separator className="bg-slate-200" />
 
-          <section className="grid gap-4 sm:grid-cols-2">
+          <section className="space-y-3">
+            <SectionMarker index={2} label={sectionCopy[1]} />
+            <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
               label={t.fields.industry}
               value={form.industry}
@@ -456,11 +494,14 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
               type="number"
               onChange={(value) => update("commuteMinutes", value)}
             />
+            </div>
           </section>
 
-          <Separator />
+          <Separator className="bg-slate-200" />
 
-          <section className="grid gap-4 sm:grid-cols-2">
+          <section className="space-y-3">
+            <SectionMarker index={3} label={sectionCopy[2]} />
+            <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
               label={t.fields.paymentMethod}
               value={form.paymentMethod}
@@ -511,11 +552,14 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
               }
               options={toOptions(labels.yesNoUnknown)}
             />
+            </div>
           </section>
 
-          <Separator />
+          <Separator className="bg-slate-200" />
 
-          <section className="grid gap-4 sm:grid-cols-2">
+          <section className="space-y-3">
+            <SectionMarker index={4} label={sectionCopy[3]} />
+            <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
               label={t.fields.contactChannel}
               value={form.contactChannel}
@@ -540,9 +584,12 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
               }
               options={toOptions(labels.cashPressure)}
             />
+            </div>
           </section>
 
-          <section className="grid gap-3">
+          <section className="space-y-3">
+            <SectionMarker index={5} label={sectionCopy[4]} />
+            <div className="grid gap-3">
             <FlagCheckbox
               checked={form.requiresUpfrontPayment}
               label={t.flags.requiresUpfrontPayment}
@@ -565,6 +612,7 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
               label={t.flags.urgentStartOrPressure}
               onCheckedChange={(checked) => update("urgentStartOrPressure", checked)}
             />
+            </div>
           </section>
 
           {error && (
@@ -573,7 +621,11 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
             </div>
           )}
 
-          <Button className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            className="h-11 w-full rounded-md bg-slate-950 text-white shadow-[4px_4px_0_rgba(20,184,166,0.32)] hover:bg-slate-800"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -604,18 +656,36 @@ function DecisionPanel({
 
   if (!report) {
     return (
-      <div className="grid gap-4">
-        <Card className="border-dashed">
-          <CardContent className="flex min-h-[260px] flex-col items-center justify-center gap-4 p-8 text-center">
-            <ShieldAlert className="h-12 w-12 text-muted-foreground" />
-            <div>
-              <h2 className="text-xl font-semibold">{t.emptyTitle}</h2>
-              <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                {t.emptyText}
-              </p>
+      <div className="sticky top-24 grid gap-4 self-start">
+        <div className="rounded-lg border border-slate-900 bg-white p-5 shadow-[8px_8px_0_rgba(15,23,42,0.10)]">
+          <div className="flex min-h-[360px] flex-col justify-between">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-500">
+                  {language === "zh" ? "等待输入" : "Awaiting input"}
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                  {t.emptyTitle}
+                </h2>
+              </div>
+              <ShieldAlert className="h-9 w-9 text-slate-400" />
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="grid place-items-center py-8">
+              <div className="relative h-44 w-44">
+                <div className="absolute inset-0 rounded-full border border-slate-200" />
+                <div className="absolute inset-5 rounded-full border border-dashed border-slate-300" />
+                <div className="absolute inset-12 rounded-full border border-slate-200 bg-slate-50" />
+                <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-600" />
+                <div className="absolute left-1/2 top-1/2 h-px w-20 origin-left -translate-y-1/2 bg-teal-600" />
+              </div>
+            </div>
+
+            <p className="border-t border-slate-200 pt-4 text-sm leading-6 text-slate-600">
+              {t.emptyText}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -628,38 +698,74 @@ function DecisionPanel({
   const localizedSafeguards = buildLocalizedSafeguards(form, report, language);
   const localizedAlternatives = buildLocalizedAlternatives(form.industry, language);
   const localizedMissingChecks = buildLocalizedMissingChecks(form, language);
+  const mediumCount = report.riskSignals.filter(
+    (signal) => signal.band === "medium"
+  ).length;
 
   return (
-    <div className="space-y-4">
-      <div className={`rounded-lg border p-5 ${decisionStyles[report.decision]}`}>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+    <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+      <div
+        className={`overflow-hidden rounded-lg border-2 bg-white shadow-[8px_8px_0_rgba(15,23,42,0.10)] ${decisionStyles[report.decision]}`}
+      >
+        <div className={`h-2 ${decisionAccentStyles[report.decision]}`} />
+        <div className="p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center border border-current bg-white/70">
             {report.decision === "PROCEED" ? (
               <BadgeCheck className="h-6 w-6" />
             ) : (
               <ShieldAlert className="h-6 w-6" />
             )}
-            <h2 className="text-2xl font-bold">{t.decisions[report.decision]}</h2>
+              </div>
+              <div>
+                <p className="text-xs font-semibold">
+                  {language === "zh" ? "建议策略" : "Recommended strategy"}
+                </p>
+                <h2 className="mt-1 text-2xl font-bold">
+                  {t.decisions[report.decision]}
+                </h2>
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              {severeCount > 0 && (
+                <Badge className="rounded-sm bg-red-600">
+                  {severeCount} {t.bands.severe}
+                </Badge>
+              )}
+              {highCount > 0 && (
+                <Badge className="rounded-sm bg-orange-500">
+                  {highCount} {t.bands.high}
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {severeCount > 0 && (
-              <Badge className="bg-red-600">
-                {severeCount} {t.bands.severe}
-              </Badge>
-            )}
-            {highCount > 0 && (
-              <Badge className="bg-orange-500">
-                {highCount} {t.bands.high}
-              </Badge>
-            )}
+
+          <p className="text-sm leading-6">
+            {buildLocalizedDecisionSummary(report, form, language)}
+          </p>
+
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <SignalCount
+              label={t.bands.severe}
+              value={severeCount}
+              className="border-red-200 bg-red-100 text-red-950"
+            />
+            <SignalCount
+              label={t.bands.high}
+              value={highCount}
+              className="border-orange-200 bg-orange-100 text-orange-950"
+            />
+            <SignalCount
+              label={t.bands.medium}
+              value={mediumCount}
+              className="border-amber-200 bg-amber-100 text-amber-950"
+            />
           </div>
         </div>
-        <p className="text-sm leading-6">
-          {buildLocalizedDecisionSummary(report, form, language)}
-        </p>
       </div>
 
-      <Card>
+      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <AlertTriangle className="h-5 w-5" />
@@ -676,10 +782,13 @@ function DecisionPanel({
               const localizedSignal = localizeSignal(signal, form, language);
 
               return (
-                <div key={signal.id} className="rounded-md border p-3">
+                <div
+                  key={signal.id}
+                  className="border-l-4 border-slate-300 bg-slate-50 p-3"
+                >
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <h3 className="font-medium">{localizedSignal.title}</h3>
-                    <Badge className={riskBandStyles[signal.band]}>
+                    <Badge className={`rounded-sm ${riskBandStyles[signal.band]}`}>
                       {t.bands[signal.band]}
                     </Badge>
                   </div>
@@ -703,7 +812,7 @@ function DecisionPanel({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <HelpCircle className="h-5 w-5" />
@@ -714,7 +823,7 @@ function DecisionPanel({
           <ol className="space-y-2">
             {localizedQuestions.map((question, index) => (
               <li key={question} className="flex gap-3 text-sm">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-slate-300 bg-slate-50 text-xs font-semibold">
                   {index + 1}
                 </span>
                 <span>{question}</span>
@@ -724,7 +833,7 @@ function DecisionPanel({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <ClipboardList className="h-5 w-5" />
@@ -735,7 +844,7 @@ function DecisionPanel({
           <ul className="space-y-2">
             {localizedSafeguards.map((item) => (
               <li key={item} className="flex gap-2 text-sm">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 bg-teal-600" />
                 <span>{item}</span>
               </li>
             ))}
@@ -743,7 +852,7 @@ function DecisionPanel({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <WalletCards className="h-5 w-5" />
@@ -752,14 +861,14 @@ function DecisionPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           {localizedAlternatives.map((alternative) => (
-            <div key={alternative.title} className="rounded-md border p-3">
+            <div key={alternative.title} className="border bg-[#fbfbf7] p-3">
               <h3 className="font-medium">{alternative.title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {alternative.whySafer}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {alternative.whatToSearch.map((term) => (
-                  <Badge key={term} variant="outline">
+                  <Badge key={term} variant="outline" className="rounded-sm">
                     {term}
                   </Badge>
                 ))}
@@ -770,7 +879,7 @@ function DecisionPanel({
       </Card>
 
       {localizedMissingChecks.length > 0 && (
-        <Card>
+        <Card className="rounded-lg border-slate-200 bg-white py-0 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">{t.sections.missing}</CardTitle>
           </CardHeader>
@@ -1194,6 +1303,35 @@ function buildLocalizedMissingChecks(form: FormState, language: OpportunityLangu
   return missing;
 }
 
+function SectionMarker({ index, label }: { index: number; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex h-6 w-6 items-center justify-center border border-slate-900 bg-slate-950 text-xs font-semibold text-white">
+        {index}
+      </span>
+      <h3 className="text-sm font-semibold text-slate-800">{label}</h3>
+      <div className="h-px flex-1 bg-slate-200" />
+    </div>
+  );
+}
+
+function SignalCount({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: number;
+  className: string;
+}) {
+  return (
+    <div className={`border p-3 ${className}`}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="mt-1 text-xs font-medium">{label}</div>
+    </div>
+  );
+}
+
 function SelectField({
   label,
   value,
@@ -1209,14 +1347,16 @@ function SelectField({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="text-xs font-semibold text-slate-600">
+        {label}
+      </Label>
       <Select
         value={value}
         onValueChange={(nextValue) => {
           if (nextValue !== null) onValueChange(nextValue);
         }}
       >
-        <SelectTrigger id={id}>
+        <SelectTrigger id={id} className="h-10 rounded-md border-slate-300 bg-white">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -1248,7 +1388,9 @@ function TextField({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="text-xs font-semibold text-slate-600">
+        {label}
+      </Label>
       <Input
         id={id}
         type={type}
@@ -1256,6 +1398,7 @@ function TextField({
         min={type === "number" ? 0 : undefined}
         step={type === "number" ? "0.01" : undefined}
         placeholder={placeholder}
+        className="h-10 rounded-md border-slate-300 bg-white"
         onChange={(event) => onChange(event.target.value)}
       />
     </div>
@@ -1276,7 +1419,7 @@ function FlagCheckbox({
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm"
+      className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-300 bg-white p-3 text-sm transition-colors hover:border-slate-900"
     >
       <Checkbox
         id={id}

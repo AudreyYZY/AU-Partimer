@@ -52,7 +52,17 @@ export function ChatInterface({ flowType, systemMessage }: ChatInterfaceProps) {
       });
 
       if (!response.ok) {
-        throw new Error("聊天请求失败");
+        const errorText = await response.text();
+        let message = "聊天请求失败";
+
+        try {
+          const parsed = JSON.parse(errorText) as { error?: string };
+          message = parsed.error ?? message;
+        } catch {
+          if (errorText.trim()) message = errorText.trim();
+        }
+
+        throw new Error(message);
       }
 
       const content = await response.text();
@@ -61,7 +71,7 @@ export function ChatInterface({ flowType, systemMessage }: ChatInterfaceProps) {
         role: "assistant",
         content:
           content.trim() ||
-          "AI 分析服务暂时不可用。请检查 MIMO_API_KEY / MIMO_BASE_URL 配置，或稍后再试。",
+          "AI 分析服务暂时不可用。请检查 OPENAI_API_KEY / OPENAI_MODEL 配置，或稍后再试。",
       };
 
       setMessages((prev) => [...prev, assistantMessage]);

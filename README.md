@@ -33,8 +33,8 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 
 当前状态：
 - 页面和 prompt 已中文化
-- 依赖 `MIMO_API_KEY` / `MIMO_BASE_URL`
-- 如果 LLM key 无效，会显示服务暂不可用
+- 依赖 `OPENAI_API_KEY`，可选 `OPENAI_MODEL`
+- 如果没有配置 LLM key，会明确返回“LLM 未配置”，不会假装已经完成分析
 
 ### 4. 文件材料检查
 
@@ -42,7 +42,8 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 
 当前状态：
 - 已完成上传校验和纯文本提取
-- PDF/图片 OCR、工资单结构化解析、截图证据抽取还未完成
+- PDF/图片会返回 `UNSUPPORTED_ANALYSIS`
+- OCR、工资单结构化解析、截图证据抽取还未完成
 - 当前不能把文件模式视为完整分析功能
 
 ## Tech Stack
@@ -53,7 +54,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 | Language | TypeScript |
 | Database | PostgreSQL + Prisma |
 | UI | Tailwind CSS + shadcn/ui |
-| LLM | Vercel AI SDK + DeepSeek |
+| LLM | Vercel AI SDK + OpenAI-compatible provider |
 | Rule Engine | json-rules-engine |
 | Auth | Not enabled in MVP |
 | Deployment | Vercel |
@@ -133,11 +134,9 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `MIMO_API_KEY` | DeepSeek API key |
-| `MIMO_BASE_URL` | DeepSeek API base URL |
-| `MIMO_MODEL` | Model to use |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk auth public key |
-| `CLERK_SECRET_KEY` | Clerk auth secret key |
+| `OPENAI_API_KEY` | Enables Situation Analyzer LLM chat |
+| `OPENAI_MODEL` | Optional model override; defaults to `gpt-5-mini` |
+| `OPENAI_BASE_URL` | Optional OpenAI-compatible base URL override |
 
 ## Legal Data Sources
 
@@ -145,6 +144,11 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 - [Fair Work Commission](https://www.fwc.gov.au)
 - [Australian Taxation Office](https://www.ato.gov.au)
 - [Department of Home Affairs](https://immi.homeaffairs.gov.au)
+- [Scamwatch](https://www.scamwatch.gov.au)
+
+## Real Case Corpus
+
+真实案例和官方材料整理在 `docs/research/real-case-corpus.md`。这些材料用于设计规则、构造测试样例和校验风险标签，不应被复制成“个案法律结论”。
 
 ## Important Contacts
 

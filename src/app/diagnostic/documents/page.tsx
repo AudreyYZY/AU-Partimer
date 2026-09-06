@@ -181,8 +181,12 @@ export default function DocumentsPage() {
           )}
 
           {uploadResult && (
-            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-              <p className="font-medium">{uploadResult.status}</p>
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              <p className="font-medium">
+                {uploadResult.status === "UNSUPPORTED_ANALYSIS"
+                  ? "暂不支持自动分析"
+                  : "文本已提取"}
+              </p>
               <p className="mt-1">{uploadResult.message}</p>
             </div>
           )}
@@ -197,7 +201,7 @@ export default function DocumentsPage() {
               <li>• 招聘广告：工资、地点、职责和诈骗信号</li>
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
-              MVP 阶段只完成上传与基础反馈；PDF/图片 OCR 和深度文件解析还需要继续开发。
+              MVP 阶段只完成上传校验和纯文本提取；PDF/图片会返回暂不支持自动分析，不会假装已经完成 OCR。
             </p>
           </div>
 

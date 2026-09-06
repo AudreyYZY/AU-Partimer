@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 import { streamText } from "ai";
 import { z } from "zod";
-import { getModel } from "@/services/llm/client";
+import { getModel, isLlmConfigured } from "@/services/llm/client";
 import {
   DIAGNOSTIC_SYSTEM_PROMPT,
   HEALTH_CHECK_INTRO,
@@ -18,6 +18,13 @@ export const maxDuration = 60; // Allow longer for LLM processing
 export async function POST(request: NextRequest) {
   try {
     const { messages, flowType } = await request.json();
+
+    if (!isLlmConfigured()) {
+      return new Response(JSON.stringify({ error: "LLM 未配置，请设置 OPENAI_API_KEY 后再使用具体情况分析。" }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const model = getModel();
 

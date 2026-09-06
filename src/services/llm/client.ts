@@ -1,21 +1,26 @@
 // LLM Client Service
-// Configures the AI SDK provider for DeepSeek/MiMo compatible API
+// Uses the standard OpenAI-compatible AI SDK provider.
 
 import { createOpenAI } from "@ai-sdk/openai";
 
-// Create a provider instance configured for DeepSeek/MiMo API
-// The API is OpenAI-compatible, so we use the OpenAI provider with custom base URL
+export function isLlmConfigured() {
+  return Boolean(process.env.OPENAI_API_KEY);
+}
+
 export const llmProvider = createOpenAI({
-  apiKey: process.env.MIMO_API_KEY ?? "",
-  baseURL: process.env.MIMO_BASE_URL ?? "https://api.deepseek.com",
+  apiKey: process.env.OPENAI_API_KEY ?? "",
+  baseURL: process.env.OPENAI_BASE_URL,
 });
 
-// Default model to use
-export const DEFAULT_MODEL = process.env.MIMO_MODEL ?? "deepseek-v4-flash";
+export const DEFAULT_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
 
 /**
  * Get the model instance for a given model ID
  */
 export function getModel(modelId?: string) {
+  if (!isLlmConfigured()) {
+    throw new Error("LLM is not configured. Set OPENAI_API_KEY to enable chat analysis.");
+  }
+
   return llmProvider(modelId ?? DEFAULT_MODEL);
 }

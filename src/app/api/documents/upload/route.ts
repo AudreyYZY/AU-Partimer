@@ -35,17 +35,19 @@ export async function POST(request: NextRequest) {
     }
 
     const extractedText = file.type === "text/plain" ? await file.text() : null;
+    const isTextFile = Boolean(extractedText);
 
     return NextResponse.json({
       fileName: file.name,
       mimeType: file.type,
       fileSize: file.size,
-      status: extractedText ? "EXTRACTED" : "UPLOADED",
+      status: isTextFile ? "TEXT_EXTRACTED" : "UNSUPPORTED_ANALYSIS",
       extractedText,
-      analysisAvailable: Boolean(extractedText),
+      textExtractionAvailable: isTextFile,
+      analysisAvailable: false,
       message: extractedText
-        ? "已成功提取文本。下一步需要接入规则分析和证据结构化。"
-        : "文件已收到。MVP 阶段还没有启用 PDF/图片 OCR 和深度文件分析。",
+        ? "已成功提取文本，但规则分析和证据结构化还未接入。"
+        : "暂不支持 PDF/图片 OCR 和深度文件分析。请先改用文字描述，或上传纯文本内容。",
     });
   } catch (error) {
     console.error("Document upload error:", error);

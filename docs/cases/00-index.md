@@ -7,6 +7,9 @@
 > These cases are synthetic demo scenarios. They are useful for UI testing,
 > interview-flow design, and rule-engine examples, but they are not verified
 > real cases and must not be used as legal authority or evidence.
+>
+> For source-backed real case seeds, use
+> [`docs/research/real-case-corpus.md`](../research/real-case-corpus.md).
 
 ---
 
