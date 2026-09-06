@@ -78,6 +78,7 @@ const cleanReport = assessOpportunity(baseOpportunity);
 assert.equal(cleanReport.decision, "PROCEED");
 assert.ok(cleanReport.confidence.score >= 80);
 assert.equal(cleanReport.confidence.evidenceCompleteness, 100);
+assert.equal(cleanReport.awardCheck.candidateAward?.code, "MA000119");
 
 for (const fixture of opportunityRealCaseFixtures) {
   const report = assessOpportunity(fixture.facts);

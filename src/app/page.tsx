@@ -72,8 +72,8 @@ const copy = {
       {
         title: "文件材料检查",
         stage: "有材料",
-        status: "纯文本 MVP",
-        description: "上传校验和纯文本提取已可用；PDF/图片 OCR 明确标记暂不支持。",
+        status: "文本抽取可用",
+        description: "上传校验、纯文本和可复制文字 PDF 抽取已可用；扫描件和图片 OCR 仍需配置与评估。",
       },
     ],
     controls: [
@@ -91,7 +91,7 @@ const copy = {
     reliability: [
       ["高可信", "明确诈骗信号、全国最低工资基准、工资单要求、学生签工时、证据缺口。"],
       ["中可信", "是否短期过渡、先问哪些问题、同类替代岗位方向。"],
-      ["暂不声称可信", "精确 award rate、雇主真实性自动验证、PDF/图片 OCR、个案法律胜算。"],
+      ["暂不声称可信", "精确 award rate、扫描件/图片 OCR、招聘者本人真实性、个案法律胜算。"],
     ],
     gates: [
       "严重诈骗样例不能被判成可以继续",
@@ -152,9 +152,9 @@ const copy = {
       {
         title: "Document Review",
         stage: "Have files",
-        status: "Text MVP",
+        status: "Text extraction available",
         description:
-          "Upload validation and text extraction are available. PDF/image OCR is explicitly unsupported.",
+          "Upload validation, plain text, and text-based PDF extraction are available. Scanned PDFs and image OCR still need configuration and evaluation.",
       },
     ],
     controls: [
@@ -186,7 +186,7 @@ const copy = {
       ],
       [
         "Not claimed reliable yet",
-        "Precise award rates, employer verification, PDF/image OCR, and legal outcome prediction.",
+        "Precise award rates, scanned PDF/image OCR, recruiter identity authenticity, and legal outcome prediction.",
       ],
     ],
     gates: [

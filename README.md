@@ -16,6 +16,8 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 - 诈骗、工资、工资单、养老金、签证工时和现实可行性风险
 - 开始前应该问雇主的问题
 - 开始前验证步骤：ABN/企业身份、Fair Work PACT、Record My Hours、Scamwatch、学生签排班核对
+- 雇主名称 / ABN 核验：配置 `ABN_LOOKUP_GUID` 后可调用 ABN Lookup；未配置时降级为官方链接人工核验
+- 候选 Award 核查：根据行业给出可能的 award family 和官方 PACT / pay guide 下一步
 - 急需收入时的 harm-reduction 保护措施
 - 更低风险的同类岗位搜索方向
 - 中文/英文一键切换
@@ -43,8 +45,9 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 适合用户有工资单、合同、招聘广告或聊天截图时使用。
 
 当前状态：
-- 已完成上传校验和纯文本提取
-- PDF/图片会返回 `UNSUPPORTED_ANALYSIS`
+- 已完成上传校验、纯文本提取和可复制文字 PDF 提取
+- 扫描版 PDF 会返回 `PDF_REQUIRES_OCR`
+- 图片会返回 `IMAGE_OCR_NOT_CONFIGURED`
 - OCR、工资单结构化解析、截图证据抽取还未完成
 - 当前不能把文件模式视为完整分析功能
 
@@ -76,8 +79,8 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 
 - 高可信：明确诈骗信号、全国最低工资基准、工资单要求、当前 super guarantee、明显证据缺口。
 - 中可信：是否“值得继续”、是否短期过渡、同类岗位替代方向。这些是决策建议，不是法律结论。
-- 低可信或未完成：具体 award rate 精确计算、PDF/图片 OCR、雇主真实性自动验证、个案法律胜算判断。
-- 雇主身份状态目前依赖用户选择；系统会提示 ABN/官网/正式邮箱核验，但还没有自动调用 ABN Lookup API。
+- 低可信或未完成：具体 award rate 精确计算、扫描版 PDF/图片 OCR、招聘者本人真实性判断、个案法律胜算判断。
+- 雇主身份核验支持 ABN Lookup web service；需要配置 `ABN_LOOKUP_GUID`。未配置时系统会返回官方 ABN Lookup / ASIC 链接和人工核验步骤。
 - 当前工资基准必须随 Fair Work 更新维护。
 - Award-specific pay rates 取决于年龄、职责、等级、行业覆盖和排班，不能假装只靠一个行业字段就能算准。
 - 合成案例和 AI 生成案例只能用于测试，不能作为法律来源。
@@ -142,6 +145,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 | `OPENAI_API_KEY` | Enables Situation Analyzer LLM chat |
 | `OPENAI_MODEL` | Optional model override; defaults to `gpt-5-mini` |
 | `OPENAI_BASE_URL` | Optional OpenAI-compatible base URL override |
+| `ABN_LOOKUP_GUID` | Optional ABN Lookup web services GUID for live employer identity checks |
 
 ## Legal Data Sources
 
@@ -163,7 +167,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 |------|---------------------------|-----------------------------|
 | Fair Work PACT | 更权威，能计算 award、penalty rates、allowances 和 classification | AU-Partimer 更适合入职前判断“是否值得继续”和“先问什么” |
 | Fair Work Record My Hours | 更适合持续记录工时、导出 timesheet 和保存材料 | AU-Partimer 会告诉用户为什么要留证据、何时退出、查哪些风险 |
-| ABN Lookup / ASIC registers | 更适合核实企业身份和 business name | AU-Partimer 把核验步骤放进决策流程，但尚未自动查询 |
+| ABN Lookup / ASIC registers | 更适合核实企业身份和 business name | AU-Partimer 可调用 ABN Lookup，并把 ABN/ASIC 结果放进“是否继续”的决策流程 |
 | Scamwatch | 更权威的诈骗模式和报案入口 | AU-Partimer 会把诈骗信号和工资、签证、现实压力放在同一份行动建议里 |
 
 当前定位：AU-Partimer 不应该替代这些官方工具，而应成为“求职前筛查和行动编排层”：先判断风险，再把用户导向正确的官方检查。

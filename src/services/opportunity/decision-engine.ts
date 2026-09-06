@@ -3,6 +3,8 @@ import {
   NATIONAL_MIN_WAGE_HOURLY,
   NATIONAL_MIN_WAGE_CASUAL_HOURLY,
   OPPORTUNITY_RULESET_VERSION,
+  INDUSTRY_AWARD_MAP,
+  LEGAL_RESOURCES,
 } from "@/lib/constants";
 import type {
   OpportunityConfidence,
@@ -78,6 +80,7 @@ export function assessOpportunity(facts: OpportunityFacts): OpportunityReport {
     questionsForEmployer: buildQuestionsForEmployer(facts, riskSignals),
     safeguards: buildSafeguards(facts, riskSignals),
     verificationSteps: buildVerificationSteps(facts, riskSignals),
+    awardCheck: buildAwardCheck(facts),
     alternatives: buildAlternatives(facts.industry),
     sources: SOURCES,
     meta: {
@@ -93,7 +96,7 @@ export function assessOpportunity(facts: OpportunityFacts): OpportunityReport {
       },
       limitations: [
         "This screening does not verify whether an employer or job ad is genuine.",
-        "It does not calculate award-specific rates, penalty rates, allowances, or junior rates.",
+        "Award guidance identifies a likely award family only. Official award, classification, penalty rates, allowances, and junior rates still need Fair Work PACT or pay guide confirmation.",
         "It does not provide legal, migration, tax, or financial advice.",
         "Low-risk output still depends on the facts entered by the user.",
       ],
@@ -657,6 +660,52 @@ function buildVerificationSteps(
   }
 
   return steps;
+}
+
+function buildAwardCheck(facts: OpportunityFacts): OpportunityReport["awardCheck"] {
+  const awardCode = INDUSTRY_AWARD_MAP[facts.industry];
+  const awardNameByCode: Record<string, string> = {
+    MA000119: "Restaurant Industry Award",
+    MA000004: "General Retail Industry Award",
+    MA000022: "Cleaning Services Award",
+    MA000085: "Storage Services and Wholesale Award",
+  };
+  const limitations = [
+    "Role duties, age, classification level, shift time, weekend/public holiday work, and allowances can change the lawful minimum.",
+    "The national minimum benchmark is a floor for screening, not a substitute for award calculation.",
+    "If Fair Work PACT or the pay guide shows a higher rate, use the official result over this screening.",
+  ];
+
+  if (!awardCode) {
+    return {
+      status: "benchmark_only",
+      reason:
+        "The industry entered is too broad to map to a likely award family without more duties and employer context.",
+      nextStep:
+        "Use Fair Work's Pay and Conditions Tool with the exact duties, age, employment type, and roster before accepting the rate.",
+      payCalculatorUrl: LEGAL_RESOURCES.PAY_CALCULATOR.url,
+      payGuidesUrl: LEGAL_RESOURCES.PAY_GUIDES.url,
+      limitations,
+    };
+  }
+
+  return {
+    status:
+      facts.roleTitle && facts.employmentType !== "unknown"
+        ? "candidate_award_identified"
+        : "needs_user_classification",
+    candidateAward: {
+      code: awardCode,
+      name: awardNameByCode[awardCode] ?? awardCode,
+    },
+    reason:
+      "The industry suggests a likely award family, but the exact minimum depends on Fair Work classification and roster details.",
+    nextStep:
+      "Run Fair Work PACT or the official pay guide for the candidate award, then compare base rate, casual loading, penalty rates, overtime, and allowances.",
+    payCalculatorUrl: LEGAL_RESOURCES.PAY_CALCULATOR.url,
+    payGuidesUrl: LEGAL_RESOURCES.PAY_GUIDES.url,
+    limitations,
+  };
 }
 
 function buildAlternatives(industry: OpportunityFacts["industry"]): OpportunityAlternative[] {

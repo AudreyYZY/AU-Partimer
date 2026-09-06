@@ -28,6 +28,7 @@ export interface OpportunityFacts {
     | "warehouse"
     | "delivery"
     | "other";
+  employerNameOrAbn?: string;
   roleTitle?: string;
   employmentType: "full_time" | "part_time" | "casual" | "unknown";
   offeredHourlyRate?: number;
@@ -83,6 +84,24 @@ export interface VerificationStep {
   priority: "before_contact" | "before_documents" | "before_shift";
 }
 
+export type AwardCheckStatus =
+  | "candidate_award_identified"
+  | "needs_user_classification"
+  | "benchmark_only";
+
+export interface AwardCheck {
+  status: AwardCheckStatus;
+  candidateAward?: {
+    code: string;
+    name: string;
+  };
+  reason: string;
+  nextStep: string;
+  payCalculatorUrl: string;
+  payGuidesUrl: string;
+  limitations: string[];
+}
+
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface OpportunityConfidence {
@@ -117,6 +136,7 @@ export interface OpportunityReport {
   questionsForEmployer: string[];
   safeguards: string[];
   verificationSteps: VerificationStep[];
+  awardCheck: AwardCheck;
   alternatives: OpportunityAlternative[];
   sources: Array<{ name: string; url: string }>;
   meta: OpportunityReportMeta;

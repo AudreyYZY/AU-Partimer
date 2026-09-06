@@ -24,6 +24,7 @@ const OpportunityRequestSchema = z.object({
     "delivery",
     "other",
   ]),
+  employerNameOrAbn: z.string().trim().optional(),
   roleTitle: z.string().trim().optional(),
   employmentType: z.enum(["full_time", "part_time", "casual", "unknown"]),
   offeredHourlyRate: OptionalNumberSchema,

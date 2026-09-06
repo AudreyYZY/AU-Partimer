@@ -39,6 +39,29 @@ import type { OpportunityFacts, OpportunityReport } from "@/types/opportunity";
 
 export type OpportunityLanguage = "zh" | "en";
 
+type EmployerVerificationResult = {
+  status:
+    | "live_verified"
+    | "live_not_found"
+    | "manual_required"
+    | "invalid_identifier"
+    | "service_error";
+  query: string;
+  lookupUrl: string;
+  asicUrl: string;
+  matches: Array<{
+    abn?: string;
+    name: string;
+    status?: string;
+    entityType?: string;
+    gst?: string;
+    state?: string;
+    postcode?: string;
+  }>;
+  message: string;
+  limitations: string[];
+};
+
 type FormState = Omit<
   OpportunityFacts,
   "offeredHourlyRate" | "weeklyHours" | "trialShiftHours" | "commuteMinutes"
@@ -54,6 +77,7 @@ const initialState: FormState = {
   visaType: "500",
   isStudyPeriod: true,
   industry: "restaurant",
+  employerNameOrAbn: "",
   roleTitle: "",
   employmentType: "casual",
   offeredHourlyRate: "",
@@ -105,6 +129,7 @@ const copy = {
       isStudyPeriod: "现在是上课期间",
       industry: "行业",
       employmentType: "雇佣类型",
+      employerNameOrAbn: "雇主名称 / ABN",
       roleTitle: "岗位名称",
       offeredHourlyRate: "税前时薪",
       weeklyHours: "预计每周工时",
@@ -122,6 +147,7 @@ const copy = {
     },
     placeholders: {
       roleTitle: "服务员、厨房帮工、拣货员...",
+      employerNameOrAbn: "例如店名、公司名或 11 位 ABN",
       offeredHourlyRate: "例如 25",
       weeklyHours: "例如 20",
       commuteMinutes: "例如 35",
@@ -136,7 +162,10 @@ const copy = {
     actions: {
       submit: "判断这个机会",
       submitting: "分析中",
+      verifyEmployer: "核验雇主",
+      verifyingEmployer: "核验中",
       error: "暂时无法分析这个机会，请稍后再试。",
+      verificationError: "暂时无法核验雇主，请稍后再试。",
     },
     emptyTitle: "还没有生成判断",
     emptyText:
@@ -148,7 +177,26 @@ const copy = {
       safeguards: "保护自己",
       alternatives: "更低风险的同类方向",
       verification: "开始前验证步骤",
+      award: "工资和 Award 核查",
       missing: "还缺的信息",
+    },
+    employerVerification: {
+      live_verified: "ABN Lookup 已返回匹配记录",
+      live_not_found: "没有找到匹配记录",
+      manual_required: "需要手动核验",
+      invalid_identifier: "输入格式需要检查",
+      service_error: "核验服务暂时不可用",
+      officialSearch: "打开 ABN Lookup",
+      asicSearch: "打开 ASIC business name 查询",
+      limitationTitle: "这个结果不能单独证明岗位真实",
+      noMatches: "没有可展示的匹配记录。请用官方页面再次核对名称、地址和联系方式。",
+    },
+    awardCheck: {
+      candidate: "候选 Award",
+      nextStep: "下一步",
+      payCalculator: "Fair Work PACT",
+      payGuides: "Pay guides",
+      limitationTitle: "为什么不能只靠这里精确算工资",
     },
     traceability: {
       sourceId: "规则来源",
@@ -190,6 +238,7 @@ const copy = {
       isStudyPeriod: "It is currently a study period",
       industry: "Industry",
       employmentType: "Employment type",
+      employerNameOrAbn: "Employer name / ABN",
       roleTitle: "Role title",
       offeredHourlyRate: "Hourly rate before tax",
       weeklyHours: "Expected weekly hours",
@@ -207,6 +256,7 @@ const copy = {
     },
     placeholders: {
       roleTitle: "Waiter, kitchen hand, picker...",
+      employerNameOrAbn: "Business name, company name, or 11-digit ABN",
       offeredHourlyRate: "e.g. 25",
       weeklyHours: "e.g. 20",
       commuteMinutes: "e.g. 35",
@@ -221,7 +271,10 @@ const copy = {
     actions: {
       submit: "Check this opportunity",
       submitting: "Checking",
+      verifyEmployer: "Verify employer",
+      verifyingEmployer: "Verifying",
       error: "Unable to assess this opportunity right now. Please try again.",
+      verificationError: "Unable to verify the employer right now. Please try again.",
     },
     emptyTitle: "No decision yet",
     emptyText:
@@ -233,7 +286,26 @@ const copy = {
       safeguards: "Protect yourself",
       alternatives: "Lower-risk similar options",
       verification: "Before-start verification",
+      award: "Pay and award check",
       missing: "Missing information",
+    },
+    employerVerification: {
+      live_verified: "ABN Lookup returned matching records",
+      live_not_found: "No matching record found",
+      manual_required: "Manual verification required",
+      invalid_identifier: "Check the input format",
+      service_error: "Verification service unavailable",
+      officialSearch: "Open ABN Lookup",
+      asicSearch: "Open ASIC business name search",
+      limitationTitle: "This does not prove the job itself is genuine",
+      noMatches: "No matches to display. Re-check name, address, and contact details through official pages.",
+    },
+    awardCheck: {
+      candidate: "Candidate award",
+      nextStep: "Next step",
+      payCalculator: "Fair Work PACT",
+      payGuides: "Pay guides",
+      limitationTitle: "Why this cannot calculate exact pay alone",
     },
     traceability: {
       sourceId: "Rule source",
@@ -409,6 +481,9 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
   const [form, setForm] = useState<FormState>(initialState);
   const [report, setReport] = useState<OpportunityReport | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifyingEmployer, setIsVerifyingEmployer] = useState(false);
+  const [employerVerification, setEmployerVerification] =
+    useState<EmployerVerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const t = copy[language];
   const labels = optionLabels[language];
@@ -439,6 +514,43 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
       setError(err instanceof Error ? err.message : t.actions.error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEmployerVerification = async () => {
+    if (!form.employerNameOrAbn?.trim()) return;
+
+    setIsVerifyingEmployer(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/verification/abn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: form.employerNameOrAbn,
+          state: form.state,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok && response.status !== 501) {
+        throw new Error(data.error ?? t.actions.verificationError);
+      }
+
+      setEmployerVerification(data);
+      if (data.status === "live_verified") {
+        update("employerIdentityStatus", "verified");
+      } else if (
+        data.status === "manual_required" &&
+        form.employerIdentityStatus === "unknown"
+      ) {
+        update("employerIdentityStatus", "provided_unverified");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.actions.verificationError);
+    } finally {
+      setIsVerifyingEmployer(false);
     }
   };
 
@@ -587,6 +699,41 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
               }
               options={toOptions(labels.yesNoUnknown)}
             />
+            <div className="grid gap-2 sm:col-span-2">
+              <TextField
+                label={t.fields.employerNameOrAbn}
+                value={form.employerNameOrAbn ?? ""}
+                placeholder={t.placeholders.employerNameOrAbn}
+                onChange={(value) => {
+                  update("employerNameOrAbn", value);
+                  setEmployerVerification(null);
+                }}
+              />
+              <Button
+                className="w-fit rounded-md"
+                variant="outline"
+                onClick={handleEmployerVerification}
+                disabled={!form.employerNameOrAbn?.trim() || isVerifyingEmployer}
+              >
+                {isVerifyingEmployer ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t.actions.verifyingEmployer}
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    {t.actions.verifyEmployer}
+                  </>
+                )}
+              </Button>
+              {employerVerification && (
+                <EmployerVerificationCard
+                  language={language}
+                  result={employerVerification}
+                />
+              )}
+            </div>
             <SelectField
               label={t.fields.employerIdentityStatus}
               value={form.employerIdentityStatus}
@@ -836,6 +983,8 @@ function DecisionPanel({
 
       <TrustPanel report={report} language={language} />
 
+      <AwardCheckPanel report={report} language={language} />
+
       <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -1022,6 +1171,154 @@ function DecisionPanel({
   );
 }
 
+function EmployerVerificationCard({
+  language,
+  result,
+}: {
+  language: OpportunityLanguage;
+  result: EmployerVerificationResult;
+}) {
+  const t = copy[language].employerVerification;
+
+  return (
+    <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-sm text-teal-950">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-semibold">{t[result.status]}</div>
+        <Badge variant="outline" className="rounded-sm border-teal-300 bg-white">
+          ABN Lookup
+        </Badge>
+      </div>
+      <p className="mt-1 leading-6">{localizeEmployerVerificationMessage(result, language)}</p>
+
+      {result.matches.length > 0 ? (
+        <div className="mt-3 grid gap-2">
+          {result.matches.map((match) => (
+            <div
+              key={`${match.abn ?? match.name}-${match.state ?? ""}`}
+              className="border border-teal-200 bg-white p-3"
+            >
+              <div className="font-medium">{match.name}</div>
+              <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-600">
+                {match.abn && <span>ABN {match.abn}</span>}
+                {match.status && <span>{match.status}</span>}
+                {match.state && <span>{match.state}</span>}
+                {match.postcode && <span>{match.postcode}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-xs leading-5 text-teal-900">{t.noMatches}</p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a
+          href={result.lookupUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center rounded-sm border border-teal-300 bg-white px-2 py-1 text-xs font-medium underline"
+        >
+          {t.officialSearch}
+        </a>
+        <a
+          href={result.asicUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center rounded-sm border border-teal-300 bg-white px-2 py-1 text-xs font-medium underline"
+        >
+          {t.asicSearch}
+        </a>
+      </div>
+
+      <div className="mt-3 border-t border-teal-200 pt-2">
+        <div className="text-xs font-semibold">{t.limitationTitle}</div>
+        <ul className="mt-1 space-y-1 text-xs leading-5">
+          {localizeEmployerVerificationLimitations(result.limitations, language).map(
+            (limitation) => (
+              <li key={limitation}>{limitation}</li>
+            )
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function AwardCheckPanel({
+  report,
+  language,
+}: {
+  report: OpportunityReport;
+  language: OpportunityLanguage;
+}) {
+  const t = copy[language];
+  const awardCheck = report.awardCheck;
+  const localizedAward = localizeAwardCheck(report, language);
+
+  return (
+    <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <WalletCards className="h-5 w-5 text-teal-700" />
+          {t.sections.award}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="border border-slate-200 bg-slate-50 p-3">
+          <div className="text-xs font-semibold text-slate-500">
+            {t.awardCheck.candidate}
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            {awardCheck.candidateAward
+              ? `${awardCheck.candidateAward.name} (${awardCheck.candidateAward.code})`
+              : language === "zh"
+                ? "暂时只能做全国最低工资筛查"
+                : "Benchmark screening only"}
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {localizedAward.reason}
+          </p>
+        </div>
+
+        <div className="border-l-4 border-teal-600 bg-teal-50 p-3 text-sm leading-6 text-teal-950">
+          <div className="font-semibold">{t.awardCheck.nextStep}</div>
+          <p className="mt-1">{localizedAward.nextStep}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={awardCheck.payCalculatorUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs font-medium underline"
+          >
+            {t.awardCheck.payCalculator}
+          </a>
+          <a
+            href={awardCheck.payGuidesUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs font-medium underline"
+          >
+            {t.awardCheck.payGuides}
+          </a>
+        </div>
+
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+          <div className="text-xs font-semibold text-amber-950">
+            {t.awardCheck.limitationTitle}
+          </div>
+          <ul className="mt-1 space-y-1 text-xs leading-5 text-amber-950">
+            {localizedAward.limitations.map((limitation) => (
+              <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function TrustPanel({
   report,
   language,
@@ -1173,11 +1470,68 @@ function localizeLimitations(
   if (language === "en") return report.meta.limitations;
 
   return [
-    "不会自动验证雇主或招聘广告是否真实。",
-    "不会精确计算 award、penalty rates、allowances、junior rates 或具体等级。",
+    "ABN 核验只能证明注册记录存在，不能证明招聘者本人或岗位真实。",
+    "只能提示候选 award family，不能精确计算 penalty rates、allowances、junior rates 或具体等级。",
     "不构成法律、签证、税务或财务建议。",
     "低风险结果仍然依赖你填写的信息是否准确完整。",
   ];
+}
+
+function localizeEmployerVerificationMessage(
+  result: EmployerVerificationResult,
+  language: OpportunityLanguage
+) {
+  if (language === "en") return result.message;
+
+  switch (result.status) {
+    case "live_verified":
+      return "ABN Lookup 返回了匹配记录。还需要继续核对工作地址、官方邮箱/官网和招聘渠道是否一致。";
+    case "live_not_found":
+      return "没有找到匹配记录。不要只相信聊天里发来的截图或链接，请用官方页面重新核对。";
+    case "manual_required":
+      return "本地还没有配置 ABN_LOOKUP_GUID，所以不能实时查询；请打开官方 ABN Lookup 和 ASIC 页面手动核验。";
+    case "invalid_identifier":
+      return "输入的 ABN/ACN 或名称格式不够明确，请检查后再试。";
+    case "service_error":
+      return "ABN Lookup 暂时无法访问或返回异常。先按手动核验流程处理，不要急着交身份文件。";
+  }
+}
+
+function localizeEmployerVerificationLimitations(
+  limitations: string[],
+  language: OpportunityLanguage
+) {
+  if (language === "en") return limitations;
+
+  return [
+    "ABN 注册存在不代表这条招聘信息一定真实。",
+    "business name 匹配后仍要核对工作地点、正式联系方式和招聘平台记录。",
+    "ASIC business name holder 信息可能需要通过 ASIC Connect 手动进一步查看。",
+  ];
+}
+
+function localizeAwardCheck(
+  report: OpportunityReport,
+  language: OpportunityLanguage
+) {
+  if (language === "en") return report.awardCheck;
+
+  const hasCandidateAward = Boolean(report.awardCheck.candidateAward);
+
+  return {
+    ...report.awardCheck,
+    reason: hasCandidateAward
+      ? "根据行业可以推测一个候选 award family，但最低工资仍取决于职责、年龄、等级、排班和 allowance。"
+      : "当前行业信息太宽，不能可靠映射到某个 award family，只能先做全国最低工资筛查。",
+    nextStep: hasCandidateAward
+      ? "用 Fair Work PACT 或官方 pay guide 输入候选 award、年龄、雇佣类型、等级和具体排班，再对比 base rate、casual loading、周末/晚班 penalty、overtime 和 allowance。"
+      : "先用 Fair Work PACT 根据真实职责和行业找 award，再核对具体分类和排班工资。",
+    limitations: [
+      "职责、年龄、等级、工作时间、周末/公众假期和津贴都会影响最低应付工资。",
+      "全国最低工资只是筛查底线，不等于这个岗位的准确 award rate。",
+      "如果 Fair Work PACT 或 pay guide 显示更高金额，应以官方结果为准。",
+    ],
+  };
 }
 
 function toOptions(options: Record<string, string>) {
@@ -1258,6 +1612,12 @@ function localizeSignal(
       explanation:
         "微信、WhatsApp、Telegram、短信等渠道不代表一定是假，但如果缺少官方邮箱、平台记录或可核验雇主信息，需要先独立核实。",
       sourceName: "Scamwatch 求职诈骗",
+    },
+    "employer-identity-missing": {
+      title: "雇主身份还不能独立核验",
+      explanation:
+        "开始前至少要核对雇主正式名称、ABN 或 business name、工作地址、官网/官方邮箱。不要只相信聊天里发来的截图或链接。",
+      sourceName: "ABN Lookup",
     },
     "identity-docs-early": {
       title: "过早索要身份或银行信息",

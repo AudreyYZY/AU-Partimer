@@ -15,6 +15,7 @@ export default function DocumentsPage() {
   const [uploadResult, setUploadResult] = useState<{
     status: string;
     message: string;
+    extractedText?: string | null;
   } | null>(null);
 
   const validateAndSetFile = useCallback((file: File) => {
@@ -85,6 +86,7 @@ export default function DocumentsPage() {
       setUploadResult({
         status: data.status,
         message: data.message,
+        extractedText: data.extractedText,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "上传失败");
@@ -183,11 +185,19 @@ export default function DocumentsPage() {
           {uploadResult && (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
               <p className="font-medium">
-                {uploadResult.status === "UNSUPPORTED_ANALYSIS"
-                  ? "暂不支持自动分析"
-                  : "文本已提取"}
+                {uploadResult.status === "PDF_TEXT_EXTRACTED" ||
+                uploadResult.status === "TEXT_EXTRACTED"
+                  ? "文本已提取"
+                  : uploadResult.status === "PDF_REQUIRES_OCR"
+                    ? "这个 PDF 需要 OCR"
+                    : "暂不支持自动分析"}
               </p>
               <p className="mt-1">{uploadResult.message}</p>
+              {uploadResult.extractedText && (
+                <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-md border border-amber-200 bg-white p-3 text-xs leading-5 text-slate-700">
+                  {uploadResult.extractedText}
+                </pre>
+              )}
             </div>
           )}
 
@@ -201,7 +211,7 @@ export default function DocumentsPage() {
               <li>• 招聘广告：工资、地点、职责和诈骗信号</li>
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
-              MVP 阶段只完成上传校验和纯文本提取；PDF/图片会返回暂不支持自动分析，不会假装已经完成 OCR。
+              当前支持纯文本和可复制文字 PDF 的文本抽取；扫描版 PDF 和图片仍需要 OCR 配置与准确率评估，不会假装已经完成识别。
             </p>
           </div>
 

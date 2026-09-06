@@ -38,7 +38,7 @@ const pageCopy = {
     scopeTitle: "本页适合判断",
     scope: ["是否继续和对方沟通", "开始前必须核实的问题", "现金压力高时的保护措施", "更低风险的同类岗位方向"],
     limitTitle: "本页不会判断",
-    limits: ["雇主是否一定违法", "精确 award rate", "签证个案后果", "雇主真实性自动验证"],
+    limits: ["雇主是否一定违法", "精确 award rate", "签证个案后果", "招聘者本人是否真实"],
   },
   en: {
     back: "Back home",
@@ -65,7 +65,7 @@ const pageCopy = {
       "Whether the employer definitely broke the law",
       "Exact award-specific rates",
       "Individual visa consequences",
-      "Automatic employer verification",
+      "Whether the recruiter is the real employer",
     ],
   },
 } as const;
