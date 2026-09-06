@@ -16,6 +16,7 @@ const baseOpportunity: OpportunityFacts = {
   hasPayslip: "yes",
   superMentioned: "yes",
   hasWrittenAgreement: "yes",
+  employerIdentityStatus: "verified",
   trialShiftHours: 0,
   trialPaid: "unknown",
   contactChannel: "job_platform",
@@ -51,6 +52,25 @@ const harmReductionReport = assessOpportunity({
 assert.equal(harmReductionReport.decision, "SHORT_TERM_WITH_SAFEGUARDS");
 assert.ok(
   harmReductionReport.safeguards.some((item) => item.includes("review point"))
+);
+assert.ok(
+  harmReductionReport.verificationSteps.some(
+    (step) => step.id === "verify-employer-identity"
+  )
+);
+
+const unverifiableEmployerReport = assessOpportunity({
+  ...baseOpportunity,
+  contactChannel: "wechat",
+  employerIdentityStatus: "not_provided",
+  hasWrittenAgreement: "unknown",
+});
+
+assert.equal(unverifiableEmployerReport.decision, "VERIFY_FIRST");
+assert.ok(
+  unverifiableEmployerReport.riskSignals.some(
+    (signal) => signal.id === "employer-identity-missing"
+  )
 );
 
 const cleanReport = assessOpportunity(baseOpportunity);

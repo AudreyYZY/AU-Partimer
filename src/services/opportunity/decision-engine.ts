@@ -47,6 +47,7 @@ const REQUIRED_FACT_KEYS: Array<keyof OpportunityFacts> = [
   "hasPayslip",
   "superMentioned",
   "hasWrittenAgreement",
+  "employerIdentityStatus",
   "contactChannel",
   "hasOtherOptions",
   "cashPressure",
@@ -76,6 +77,7 @@ export function assessOpportunity(facts: OpportunityFacts): OpportunityReport {
     missingChecks,
     questionsForEmployer: buildQuestionsForEmployer(facts, riskSignals),
     safeguards: buildSafeguards(facts, riskSignals),
+    verificationSteps: buildVerificationSteps(facts, riskSignals),
     alternatives: buildAlternatives(facts.industry),
     sources: SOURCES,
     meta: {
@@ -135,6 +137,7 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
   }
 
   if (
+    facts.contactChannel === "wechat" ||
     facts.contactChannel === "telegram" ||
     facts.contactChannel === "whatsapp" ||
     facts.contactChannel === "sms"
@@ -149,6 +152,24 @@ function buildRiskSignals(facts: OpportunityFacts): RiskSignal[] {
       sourceName: "Scamwatch",
       sourceUrl: "https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams",
       sourceId: "SCAMWATCH-JOBSCAMS",
+      caseIds: ["SCAMWATCH-JOBSCAMS"],
+    });
+  }
+
+  if (
+    facts.employerIdentityStatus === "not_provided" ||
+    facts.employerIdentityStatus === "unknown"
+  ) {
+    signals.push({
+      id: "employer-identity-missing",
+      category: "scam",
+      band: facts.urgentStartOrPressure ? "high" : "medium",
+      title: "Employer identity is not independently verifiable yet",
+      explanation:
+        "Before sending documents or starting a shift, verify the legal employer name, ABN or business name, workplace address, and official contact channel.",
+      sourceName: "ABN Lookup",
+      sourceUrl: "https://abr.business.gov.au/",
+      sourceId: "ABN-LOOKUP",
       caseIds: ["SCAMWATCH-JOBSCAMS"],
     });
   }
@@ -430,6 +451,12 @@ function buildMissingChecks(facts: OpportunityFacts): string[] {
   if (facts.hasPayslip === "unknown") missing.push("Whether payslips will be provided");
   if (facts.superMentioned === "unknown") missing.push("Whether super will be paid on top of wages");
   if (facts.hasWrittenAgreement === "unknown") missing.push("Written confirmation of employer and pay terms");
+  if (
+    facts.employerIdentityStatus === "unknown" ||
+    facts.employerIdentityStatus === "not_provided"
+  ) {
+    missing.push("Independently verifiable employer name, ABN, website, or workplace address");
+  }
 
   return missing;
 }
@@ -447,6 +474,12 @@ function chooseDecision(
   const highRiskCount = riskSignals.filter((signal) =>
     ["severe", "high"].includes(signal.band)
   ).length;
+  const mediumRiskCount = riskSignals.filter(
+    (signal) => signal.band === "medium"
+  ).length;
+  const hasUnverifiedEmployer = riskSignals.some(
+    (signal) => signal.id === "employer-identity-missing"
+  );
 
   if (hasSevereScam || hasHighVisa) return "STOP";
 
@@ -458,7 +491,12 @@ function chooseDecision(
     return "SHORT_TERM_WITH_SAFEGUARDS";
   }
 
-  if (highRiskCount > 0 || buildMissingChecks(facts).length >= 3) {
+  if (
+    highRiskCount > 0 ||
+    hasUnverifiedEmployer ||
+    mediumRiskCount >= 2 ||
+    buildMissingChecks(facts).length >= 3
+  ) {
     return "VERIFY_FIRST";
   }
 
@@ -563,6 +601,62 @@ function buildSafeguards(
   }
 
   return safeguards;
+}
+
+function buildVerificationSteps(
+  facts: OpportunityFacts,
+  riskSignals: RiskSignal[]
+): OpportunityReport["verificationSteps"] {
+  const steps: OpportunityReport["verificationSteps"] = [
+    {
+      id: "verify-employer-identity",
+      title: "Verify the employer through an independent source",
+      description:
+        "Search the business name, ABN, workplace address, and official website yourself. Do not rely only on links sent in chat messages.",
+      url: "https://abr.business.gov.au/",
+      priority: "before_documents",
+    },
+    {
+      id: "check-pay-benchmark",
+      title: "Check the pay rate against official tools",
+      description:
+        "Use Fair Work's Pay and Conditions Tool for award-specific pay rates, penalty rates, allowances, and classifications.",
+      url: "https://calculate.fairwork.gov.au/FindYourAward",
+      priority: "before_shift",
+    },
+    {
+      id: "save-evidence",
+      title: "Create an evidence file before starting",
+      description:
+        "Save the ad, recruiter profile, messages, roster, pay rate, employer details, and your own shift log.",
+      url: "https://www.fairwork.gov.au/tools-and-resources/record-my-hours-app",
+      priority: "before_shift",
+    },
+  ];
+
+  if (facts.visaType === "500") {
+    steps.push({
+      id: "check-visa-hours",
+      title: "Check the roster against student visa work limits",
+      description:
+        "Ask for the expected roster across each rolling 14-day fortnight before accepting shifts during a study period.",
+      url: "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500",
+      priority: "before_shift",
+    });
+  }
+
+  if (riskSignals.some((signal) => signal.category === "scam")) {
+    steps.unshift({
+      id: "stop-scam-pressure",
+      title: "Pause if there is pressure, payment, or identity collection",
+      description:
+        "If the recruiter pushes for quick action, asks for money, or requests documents too early, stop and verify through official contact details.",
+      url: "https://www.scamwatch.gov.au/types-of-scams/jobs-and-employment-scams",
+      priority: "before_contact",
+    });
+  }
+
+  return steps;
 }
 
 function buildAlternatives(industry: OpportunityFacts["industry"]): OpportunityAlternative[] {

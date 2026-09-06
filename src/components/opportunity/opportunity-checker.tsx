@@ -10,6 +10,7 @@ import {
   Gauge,
   HelpCircle,
   Loader2,
+  Search,
   ShieldAlert,
   ShieldCheck,
   WalletCards,
@@ -61,6 +62,7 @@ const initialState: FormState = {
   hasPayslip: "unknown",
   superMentioned: "unknown",
   hasWrittenAgreement: "unknown",
+  employerIdentityStatus: "unknown",
   trialShiftHours: "",
   trialPaid: "unknown",
   contactChannel: "wechat",
@@ -111,6 +113,7 @@ const copy = {
       hasPayslip: "是否提供工资单",
       superMentioned: "是否提到养老金",
       hasWrittenAgreement: "是否有书面确认",
+      employerIdentityStatus: "雇主身份是否可核验",
       trialShiftHours: "试工/培训小时",
       trialPaid: "试工是否付钱",
       contactChannel: "主要联系渠道",
@@ -144,6 +147,7 @@ const copy = {
       questions: "先问雇主这些问题",
       safeguards: "保护自己",
       alternatives: "更低风险的同类方向",
+      verification: "开始前验证步骤",
       missing: "还缺的信息",
     },
     traceability: {
@@ -194,6 +198,7 @@ const copy = {
       hasPayslip: "Payslips provided",
       superMentioned: "Super mentioned",
       hasWrittenAgreement: "Written confirmation",
+      employerIdentityStatus: "Employer identity verified",
       trialShiftHours: "Trial/training hours",
       trialPaid: "Trial is paid",
       contactChannel: "Main contact channel",
@@ -227,6 +232,7 @@ const copy = {
       questions: "Questions to ask first",
       safeguards: "Protect yourself",
       alternatives: "Lower-risk similar options",
+      verification: "Before-start verification",
       missing: "Missing information",
     },
     traceability: {
@@ -306,6 +312,12 @@ const optionLabels = {
       no: "否",
       unknown: "不知道",
     },
+    employerIdentityStatus: {
+      verified: "已通过官网/ABN/正式邮箱核实",
+      provided_unverified: "对方给了信息，但我还没核实",
+      not_provided: "没有提供雇主名称/地址/ABN",
+      unknown: "不确定",
+    },
     contactChannel: {
       job_platform: "招聘平台",
       official_email: "公司邮箱",
@@ -362,6 +374,12 @@ const optionLabels = {
     yesNoUnknown: {
       yes: "Yes",
       no: "No",
+      unknown: "Not sure",
+    },
+    employerIdentityStatus: {
+      verified: "Verified via website/ABN/official email",
+      provided_unverified: "Details provided, not verified yet",
+      not_provided: "No employer name/address/ABN provided",
       unknown: "Not sure",
     },
     contactChannel: {
@@ -568,6 +586,17 @@ export function OpportunityChecker({ language }: { language: OpportunityLanguage
                 )
               }
               options={toOptions(labels.yesNoUnknown)}
+            />
+            <SelectField
+              label={t.fields.employerIdentityStatus}
+              value={form.employerIdentityStatus}
+              onValueChange={(value) =>
+                update(
+                  "employerIdentityStatus",
+                  value as FormState["employerIdentityStatus"]
+                )
+              }
+              options={toOptions(labels.employerIdentityStatus)}
             />
             <TextField
               label={t.fields.trialShiftHours}
@@ -889,6 +918,42 @@ function DecisionPanel({
               </li>
             ))}
           </ol>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-md border-slate-200 bg-white py-0 shadow-none">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Search className="h-5 w-5" />
+            {t.sections.verification}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {buildLocalizedVerificationSteps(report, language).map((step, index) => (
+            <div key={step.id} className="grid gap-2 border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-slate-300 bg-white text-xs font-semibold">
+                  {index + 1}
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold">{step.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+              {step.url && (
+                <a
+                  href={step.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-9 text-xs font-medium text-primary underline"
+                >
+                  {step.url}
+                </a>
+              )}
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -1380,6 +1445,49 @@ function buildLocalizedSafeguards(
   return safeguards;
 }
 
+function buildLocalizedVerificationSteps(
+  report: OpportunityReport,
+  language: OpportunityLanguage
+) {
+  if (language === "en") return report.verificationSteps;
+
+  const translations: Record<
+    string,
+    { title: string; description: string }
+  > = {
+    "stop-scam-pressure": {
+      title: "遇到催促、交钱或过早要证件，先暂停",
+      description:
+        "如果对方催你马上决定、要求先付款，或在核实雇主前索要证件，先停止推进，通过官方联系方式独立核实。",
+    },
+    "verify-employer-identity": {
+      title: "用独立来源核实雇主身份",
+      description:
+        "自己搜索公司名称、ABN、工作地址和官网，不要只点聊天里发来的链接。",
+    },
+    "check-pay-benchmark": {
+      title: "用官方工具核对工资",
+      description:
+        "使用 Fair Work Pay and Conditions Tool 核对 award、penalty rates、allowances 和岗位等级。",
+    },
+    "save-evidence": {
+      title: "开始前建立证据文件",
+      description:
+        "保存招聘广告、招聘者主页、聊天记录、排班、工资约定、雇主信息，并从第一天记录自己的工时。",
+    },
+    "check-visa-hours": {
+      title: "按学生签工时限制核对排班",
+      description:
+        "上课期间接受班次前，要求雇主提供连续 14 天排班，核对是否超过学生签工时限制。",
+    },
+  };
+
+  return report.verificationSteps.map((step) => ({
+    ...step,
+    ...translations[step.id],
+  }));
+}
+
 function buildLocalizedAlternatives(
   industry: OpportunityFacts["industry"],
   language: OpportunityLanguage
@@ -1515,6 +1623,16 @@ function buildLocalizedMissingChecks(form: FormState, language: OpportunityLangu
   }
   if (form.hasWrittenAgreement === "unknown") {
     missing.push(language === "zh" ? "雇主和工资条款的书面确认" : "Written confirmation of employer and pay terms");
+  }
+  if (
+    form.employerIdentityStatus === "unknown" ||
+    form.employerIdentityStatus === "not_provided"
+  ) {
+    missing.push(
+      language === "zh"
+        ? "可独立核验的雇主名称、ABN、官网或工作地址"
+        : "Independently verifiable employer name, ABN, website, or workplace address"
+    );
   }
 
   return missing;

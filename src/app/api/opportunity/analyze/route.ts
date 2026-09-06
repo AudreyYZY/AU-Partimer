@@ -32,6 +32,9 @@ const OpportunityRequestSchema = z.object({
   hasPayslip: z.enum(["yes", "no", "unknown"]),
   superMentioned: z.enum(["yes", "no", "unknown"]),
   hasWrittenAgreement: z.enum(["yes", "no", "unknown"]),
+  employerIdentityStatus: z
+    .enum(["verified", "provided_unverified", "not_provided", "unknown"])
+    .default("unknown"),
   trialShiftHours: OptionalNumberSchema,
   trialPaid: z.enum(["yes", "no", "unknown"]),
   contactChannel: z.enum([

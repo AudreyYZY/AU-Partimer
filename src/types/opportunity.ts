@@ -36,6 +36,7 @@ export interface OpportunityFacts {
   hasPayslip: "yes" | "no" | "unknown";
   superMentioned: "yes" | "no" | "unknown";
   hasWrittenAgreement: "yes" | "no" | "unknown";
+  employerIdentityStatus: "verified" | "provided_unverified" | "not_provided" | "unknown";
   trialShiftHours?: number;
   trialPaid: "yes" | "no" | "unknown";
   contactChannel:
@@ -74,6 +75,14 @@ export interface OpportunityAlternative {
   whatToSearch: string[];
 }
 
+export interface VerificationStep {
+  id: string;
+  title: string;
+  description: string;
+  url?: string;
+  priority: "before_contact" | "before_documents" | "before_shift";
+}
+
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface OpportunityConfidence {
@@ -107,6 +116,7 @@ export interface OpportunityReport {
   missingChecks: string[];
   questionsForEmployer: string[];
   safeguards: string[];
+  verificationSteps: VerificationStep[];
   alternatives: OpportunityAlternative[];
   sources: Array<{ name: string; url: string }>;
   meta: OpportunityReportMeta;

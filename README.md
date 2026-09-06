@@ -15,6 +15,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 - 风险分、可信度、证据完整度、来源覆盖率和规则版本
 - 诈骗、工资、工资单、养老金、签证工时和现实可行性风险
 - 开始前应该问雇主的问题
+- 开始前验证步骤：ABN/企业身份、Fair Work PACT、Record My Hours、Scamwatch、学生签排班核对
 - 急需收入时的 harm-reduction 保护措施
 - 更低风险的同类岗位搜索方向
 - 中文/英文一键切换
@@ -76,6 +77,7 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 - 高可信：明确诈骗信号、全国最低工资基准、工资单要求、当前 super guarantee、明显证据缺口。
 - 中可信：是否“值得继续”、是否短期过渡、同类岗位替代方向。这些是决策建议，不是法律结论。
 - 低可信或未完成：具体 award rate 精确计算、PDF/图片 OCR、雇主真实性自动验证、个案法律胜算判断。
+- 雇主身份状态目前依赖用户选择；系统会提示 ABN/官网/正式邮箱核验，但还没有自动调用 ABN Lookup API。
 - 当前工资基准必须随 Fair Work 更新维护。
 - Award-specific pay rates 取决于年龄、职责、等级、行业覆盖和排班，不能假装只靠一个行业字段就能算准。
 - 合成案例和 AI 生成案例只能用于测试，不能作为法律来源。
@@ -154,6 +156,17 @@ AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual work
 真实案例和官方材料整理在 `docs/research/real-case-corpus.md`。这些材料用于设计规则、构造测试样例和校验风险标签，不应被复制成“个案法律结论”。
 
 评估方法和企业级上线门槛整理在 `docs/research/evaluation-framework.md`。
+
+## 同类工具对比
+
+| Tool | Stronger Than AU-Partimer | AU-Partimer Differentiation |
+|------|---------------------------|-----------------------------|
+| Fair Work PACT | 更权威，能计算 award、penalty rates、allowances 和 classification | AU-Partimer 更适合入职前判断“是否值得继续”和“先问什么” |
+| Fair Work Record My Hours | 更适合持续记录工时、导出 timesheet 和保存材料 | AU-Partimer 会告诉用户为什么要留证据、何时退出、查哪些风险 |
+| ABN Lookup / ASIC registers | 更适合核实企业身份和 business name | AU-Partimer 把核验步骤放进决策流程，但尚未自动查询 |
+| Scamwatch | 更权威的诈骗模式和报案入口 | AU-Partimer 会把诈骗信号和工资、签证、现实压力放在同一份行动建议里 |
+
+当前定位：AU-Partimer 不应该替代这些官方工具，而应成为“求职前筛查和行动编排层”：先判断风险，再把用户导向正确的官方检查。
 
 ## Important Contacts
 
