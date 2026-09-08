@@ -93,6 +93,28 @@ export const evidenceSchema = z.object({
   confirmed: z.boolean(),
   createdAt: z.string().datetime(),
 });
+export const agentRunRecordSchema = z.object({
+  id: z.string().uuid(),
+  at: z.string().datetime(),
+  status: z.enum(["needs_user_input", "completed"]),
+  explanationMode: z.enum(["model", "deterministic"]),
+  decision: z.enum([
+    "STOP",
+    "VERIFY_FIRST",
+    "SHORT_TERM_WITH_SAFEGUARDS",
+    "PROCEED",
+  ]),
+  sourceIds: z.array(z.string().max(120)).max(8),
+  trace: z
+    .array(
+      z.object({
+        node: z.string().max(80),
+        status: z.string().max(40),
+        detail: z.string().max(300),
+      }),
+    )
+    .max(10),
+});
 export const caseSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(120),
@@ -119,6 +141,7 @@ export const caseSchema = z.object({
     )
     .max(20)
     .default([]),
+  agentRuns: z.array(agentRunRecordSchema).max(10).default([]),
   snapshots: z
     .array(
       z.object({

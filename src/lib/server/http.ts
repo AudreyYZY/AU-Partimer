@@ -96,7 +96,13 @@ export async function consumeBudget(
   return value.used <= max;
 }
 type Kind =
-  "screening" | "chat" | "registry" | "document" | "backup" | "access";
+  | "screening"
+  | "chat"
+  | "agent"
+  | "registry"
+  | "document"
+  | "backup"
+  | "access";
 export function hasAccess(request: NextRequest) {
   const expected = process.env.APP_ACCESS_TOKEN;
   const token =
@@ -134,14 +140,14 @@ export function apiRoute(
       if (
         !(await consumeBudget(
           "global-minute:" + kind,
-          kind === "chat" ? 8 : 60,
+          kind === "chat" || kind === "agent" ? 8 : 60,
           60000,
         ))
       )
         throw new HttpError(429, "RATE_LIMITED");
       if (
-        kind === "chat" &&
-        !(await consumeBudget("global-chat-day", 100, 86400000))
+        (kind === "chat" || kind === "agent") &&
+        !(await consumeBudget("global-ai-day", 100, 86400000))
       )
         throw new HttpError(429, "DAILY_LIMIT");
       response = await handler(request);

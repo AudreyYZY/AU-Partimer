@@ -16,14 +16,14 @@ The old entry URLs remain available, but they now open the same workspace.
 - Evidence: bounded text/PDF extraction, manual review and confirmed hourly-pay provenance.
 - Hours: shift records and overlapping Monday-starting fortnight totals across cases.
 - Actions: saved checklist, questions, review date and exit conditions.
-- Situation: optional tool-using AI analysis with explicit missing facts and bounded costs.
+- Agent: LangGraph workflow for rules, missing-fact planning, reviewed official-source retrieval and optional grounded model explanation.
 - Compare: user-provided offers, gross pay and commute-adjusted earnings. No invented safer jobs.
 - Chinese/English switching, opt-in browser persistence, validated JSON export/import.
 - Optional encrypted, session-owned server backups with stale-write protection.
 
 ABN search returns candidate registration records, **not identity verification**.
 Images/scanned PDFs are explicitly unsupported for OCR. Extraction alone is not analysis.
-Exact award rates, ASIC automation, account recovery and independently measured legal
+Exact award rates, ASIC automation, durable agent checkpoints, account recovery and independently measured legal
 accuracy remain out of scope for this release.
 
 ## Run locally
@@ -77,16 +77,18 @@ is not legal accuracy. See the [validation protocol](docs/research/validation-pr
 ## Architecture
 
 ```text
-Case facts -> deterministic screening -> evidence gaps + actions + versioned snapshot
-User text -> bounded AI tool loop -> rule checks / benchmark lookup -> explanation
+Case facts -> LangGraph assessment -> human fact gate -> action plan
+Question + report -> topic/lexical retrieval -> approved official records
+Report + records -> optional grounded model -> deterministic fallback -> trace
 Upload -> byte/type/time/process limits -> extracted draft -> human confirmation
 Browser vault -> explicit opt-in -> local storage / JSON export
 Optional server backup -> access gate -> owner scoping -> AES-GCM -> PostgreSQL
 ```
 
-Next.js App Router, TypeScript, React, Zod, Prisma/PostgreSQL, AI SDK and
-json-rules-engine. No raw uploaded file is stored by the upload endpoint.
+Next.js App Router, TypeScript, React, Zod, LangGraph, Prisma/PostgreSQL, AI SDK
+and json-rules-engine. No raw uploaded file is stored by the upload endpoint.
 See the [operations guide](docs/operations/runbook.md) and
+[agent architecture](docs/architecture/05-agent-retrieval-workflow.md), and
 [engineering/interview walkthrough](docs/engineering-walkthrough.md).
 
 ## Reliability boundaries
@@ -112,6 +114,16 @@ AU-Partimer 将求职前筛查、入职后记录、材料确认和具体问题�
 当前适合受控试点和工程演示，不能宣传为已验证法律准确率的成熟商业产品。
 真实用户任务测试、专家独立标注、正式账户与保留政策、凭证齐备的线上服务验收仍需完成。
 详细边界见能力页面和部署文档。
+
+## Open production roadmap
+
+- [#1 Independent expert-labelled holdout](https://github.com/AudreyYZY/AU-Partimer/issues/1)
+- [#2 Award classification and exact rates](https://github.com/AudreyYZY/AU-Partimer/issues/2)
+- [#3 Durable agent checkpoints and authentication](https://github.com/AudreyYZY/AU-Partimer/issues/3)
+- [#4 Knowledge freshness and retrieval evaluation](https://github.com/AudreyYZY/AU-Partimer/issues/4)
+- [#5 Consented worker pilot](https://github.com/AudreyYZY/AU-Partimer/issues/5)
+- [#6 Sandboxed OCR](https://github.com/AudreyYZY/AU-Partimer/issues/6)
+- [#7 Legacy engine consolidation](https://github.com/AudreyYZY/AU-Partimer/issues/7)
 
 ## License
 

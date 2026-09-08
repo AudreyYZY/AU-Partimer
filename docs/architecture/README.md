@@ -8,6 +8,7 @@
 |----------|-------------|----------|
 | Domain Architecture | Complete architecture design | [domain-architecture.md](./domain-architecture.md) |
 | Domain Model Diagram | Visual domain model | [domain-model-diagram.md](./domain-model-diagram.md) |
+| Agent and retrieval workflow | Implemented LangGraph, retrieval and trust boundaries | [05-agent-retrieval-workflow.md](./05-agent-retrieval-workflow.md) |
 
 ---
 
@@ -15,9 +16,11 @@
 
 ### Core Principle
 
-**EmploymentFacts is the single source of truth.**
+**Confirmed case facts are the decision input; unknowns remain unknown.**
 
-All inputs (natural language, chat screenshots, PDFs, images, contracts) must be normalized into EmploymentFacts before analysis.
+Inputs must be confirmed into case facts before they affect a decision. Text PDFs
+can be extracted as drafts. Images and scanned PDFs are not yet supported; they
+must not be described as implemented fact extraction.
 
 ### Bounded Contexts
 

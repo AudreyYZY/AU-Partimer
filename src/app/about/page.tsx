@@ -30,6 +30,13 @@ export default function AboutPage() {
               ),
             ],
             [
+              t("岗位决策 Agent", "Job decision agent"),
+              t(
+                "LangGraph 状态图、官方资料检索、人工确认分支；模型解释可选",
+                "LangGraph state workflow, official-source retrieval and human confirmation; model explanation is optional",
+              ),
+            ],
+            [
               t("注册信息", "Registry information"),
               t(
                 "需要服务配置；候选记录不代表招聘者已核验",
@@ -48,6 +55,13 @@ export default function AboutPage() {
               t(
                 "文字和文字型 PDF；人工确认；不支持图片识别",
                 "Text and text PDFs; human confirmation; no image OCR",
+              ),
+            ],
+            [
+              t("Agent 持久化", "Agent persistence"),
+              t(
+                "当前仅单次请求状态与有限运行记录；尚无持久化暂停恢复",
+                "Request-scoped state and bounded run records; durable pause/resume is outstanding",
               ),
             ],
             [

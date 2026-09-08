@@ -38,6 +38,7 @@
     "@ai-sdk/react": "^3.0.195",
     "@base-ui/react": "^1.5.0",
     "@hookform/resolvers": "^5.4.0",
+    "@langchain/langgraph": "^1.4.14",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@radix-ui/react-label": "^2.1.8",

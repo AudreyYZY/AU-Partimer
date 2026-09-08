@@ -11,16 +11,14 @@ import {
   ClipboardCheck,
   FileText,
   CalendarDays,
-  MessageSquare,
+  Bot,
   GitCompareArrows,
   BriefcaseBusiness,
   Printer,
   Check,
-  Loader2,
 } from "lucide-react";
 import { useLanguagePreference } from "@/hooks/use-language-preference";
 import { useCaseVault } from "@/hooks/use-case-vault";
-import { boundedChatHistory } from "@/lib/chat-history";
 import {
   createCase,
   factsSchema,
@@ -34,6 +32,7 @@ import { assessOpportunity } from "@/services/opportunity/decision-engine";
 import { OPPORTUNITY_RULESET_VERSION } from "@/lib/constants";
 import { CaseReport } from "./case-report";
 import { RemoteBackup } from "./remote-backup";
+import { AgentPanel } from "./agent-panel";
 import {
   actionCopy,
   fieldCopy,
@@ -333,7 +332,7 @@ function CaseEditor({
     ["evidence", "材料", "Evidence", FileText],
     ["hours", "工时", "Hours", CalendarDays],
     ["actions", "待办", "Actions", ClipboardCheck],
-    ["chat", "具体问题", "Situation", MessageSquare],
+    ["chat", "智能分析", "Agent", Bot],
     ["compare", "机会对比", "Compare", GitCompareArrows],
   ];
   const renderField = (key: keyof CaseFacts) => {
@@ -849,7 +848,7 @@ function CaseEditor({
           </section>
         )}
         {tab === "chat" && (
-          <SituationPanel language={language} workCase={c} update={update} />
+          <AgentPanel language={language} workCase={c} update={update} />
         )}
         {tab === "compare" && (
           <section>
@@ -1309,132 +1308,6 @@ function HoursPanel({
           )}
         </a>
       )}
-    </section>
-  );
-}
-
-function SituationPanel({
-  language,
-  workCase: c,
-  update,
-}: {
-  language: Language;
-  workCase: WorkCase;
-  update: (c: WorkCase) => void;
-}) {
-  const t = (zh: string, en: string) => text(language, zh, en);
-  const [messages, setMessages] = useState<
-    { role: "user" | "assistant"; content: string }[]
-  >(c.messages);
-  const requestRef = useRef<AbortController | null>(null);
-  const latestCase = useRef(c);
-  useEffect(() => {
-    latestCase.current = c;
-  }, [c]);
-  useEffect(() => () => requestRef.current?.abort(), []);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  return (
-    <section className="situation-panel">
-      <h2>{t("具体工作问题", "A specific workplace issue")}</h2>
-      <p className="micro">
-        {t(
-          "发送的文字会交由 AI 服务处理。请去除证件号码、银行资料等不必要信息。对话会加入此案例，是否留在设备上取决于保存设置。",
-          "Messages are sent to the AI service. Remove unnecessary identifiers and banking details. Conversations join this case; device retention follows your save setting.",
-        )}
-      </p>
-      <div className="conversation" aria-live="polite">
-        {messages.map((m, i) => (
-          <article key={i} className={"message " + m.role}>
-            <strong>
-              {m.role === "user" ? t("你", "You") : t("分析助手", "Assistant")}
-            </strong>
-            <p>{m.content}</p>
-          </article>
-        ))}
-      </div>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (!input.trim() || busy) return;
-          setBusy(true);
-          setError("");
-          const next = [
-            ...messages,
-            { role: "user" as const, content: input.trim() },
-          ].slice(-18);
-          const controller = new AbortController();
-          requestRef.current = controller;
-          try {
-            const r = await fetch("/api/chat", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                messages: boundedChatHistory(next),
-                language,
-                flowType: "SITUATION_ANALYZER",
-              }),
-              signal: AbortSignal.any([
-                controller.signal,
-                AbortSignal.timeout(50000),
-              ]),
-            });
-            const data = await r.json();
-            if (controller.signal.aborted) return;
-            if (!r.ok) throw new Error(data.error);
-            const completed = [
-              ...next,
-              {
-                role: "assistant" as const,
-                content: (
-                  data.text ||
-                  t(
-                    "已完成工具检查，但解释未生成。请补充关键事实后重试。",
-                    "Tool checks completed without an explanation. Confirm the missing facts and retry.",
-                  )
-                ).slice(0, 12000),
-              },
-            ];
-            setMessages(completed);
-            update({ ...latestCase.current, messages: completed });
-            setInput("");
-          } catch {
-            if (controller.signal.aborted) return;
-            setError(
-              t(
-                "分析服务暂不可用或已达到使用限额。你的输入已保留；可以继续使用岗位筛查。",
-                "Analysis is unavailable or usage is limited. Your input is preserved; job screening remains available.",
-              ),
-            );
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <label className="field">
-          <span>{t("描述发生的事情", "Describe what happened")}</span>
-          <textarea
-            rows={4}
-            maxLength={4000}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-        </label>
-        <button className="primary" disabled={busy || !input.trim()}>
-          {busy ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <ArrowRight size={16} />
-          )}{" "}
-          {t("发送并分析", "Send for analysis")}
-        </button>
-      </form>
     </section>
   );
 }

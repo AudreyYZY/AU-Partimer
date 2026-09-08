@@ -20,6 +20,7 @@ test("case export preserves confirmed facts, evidence and assessment snapshots",
   assert.equal(restored.cases[0].id, c.id);
   assert.equal(c.facts.employerIdentityStatus, "unknown");
   assert.equal(c.facts.requiresUpfrontPayment, undefined);
+  assert.deepEqual(restored.cases[0].agentRuns, []);
 });
 test("imports reject duplicate cases, malformed dates and invalid pay", () => {
   const c = createCase("Example");

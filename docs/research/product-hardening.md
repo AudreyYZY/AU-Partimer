@@ -14,6 +14,20 @@ not establish legal accuracy or product-market fit.
 4. Evaluation: independent labels, holdout evaluation, user-study protocol,
    release gates and an honest interview demonstration.
 
+## September 2026 agent increment
+
+Completed in this increment:
+
+- typed LangGraph assessment, planning, human-attention, retrieval and explanation nodes;
+- curated official-source retrieval with review metadata and stale-source disclosure;
+- deterministic operation when an LLM is unconfigured or unavailable;
+- user-visible plan, execution trace and source provenance;
+- bounded case-level run history without automatically sending stored evidence;
+- regression tests for workflow branching, privacy boundary and retrieval ordering.
+
+This does not close the external acceptance work below. The production roadmap is
+tracked in GitHub issues #1 through #7 and linked from the repository README.
+
 ## External acceptance work
 
 - Live ABN and LLM integration require valid service credentials.

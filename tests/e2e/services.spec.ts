@@ -30,22 +30,35 @@ test("PDF extraction remains a draft; image OCR is explicitly unavailable", asyn
   expect((await image.json()).status).toBe("IMAGE_OCR_NOT_CONFIGURED");
 });
 
-test("unavailable analysis preserves input and does not fabricate a report", async ({
+test("unavailable agent run preserves input and does not fabricate a report", async ({
   page,
 }) => {
-  await page.route("**/api/chat", (route) =>
-    route.fulfill({ status: 503, json: { error: "CHAT_UNAVAILABLE" } }),
+  await page.route("**/api/agent/run", (route) =>
+    route.fulfill({ status: 503, json: { error: "AGENT_UNAVAILABLE" } }),
   );
   await page.goto("/diagnostic/analyze");
-  await page.getByLabel("描述发生的事情").fill("工资单还没有收到");
-  await page.getByRole("button", { name: "发送并分析" }).click();
+  await page.getByLabel("你想判断什么").fill("工资单还没有收到");
+  await page.getByRole("button", { name: "运行 Agent" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "输入已保留",
+    "输入仍在编辑框中",
   );
-  await expect(page.getByLabel("描述发生的事情")).toHaveValue(
+  await expect(page.getByLabel("你想判断什么")).toHaveValue(
     "工资单还没有收到",
   );
   await expect(page.locator(".message.assistant")).toHaveCount(0);
+});
+
+test("agent works without an LLM and exposes plan, trace and sources", async ({
+  page,
+}) => {
+  await page.goto("/diagnostic/analyze");
+  await page.getByLabel("你想判断什么").fill("对方让我无薪试工，怎么办？");
+  await page.getByRole("button", { name: "运行 Agent" }).click();
+  await expect(page.getByText("需要人工确认", { exact: true })).toBeVisible();
+  await expect(page.getByText("确定性解释", { exact: true })).toBeVisible();
+  await page.getByText("查看运行轨迹", { exact: true }).click();
+  await expect(page.locator(".agent-trace code", { hasText: "retrieve" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Fair Work Ombudsman/ }).first()).toBeVisible();
 });
 
 test("age can be typed sequentially and invalid values become unknown", async ({
