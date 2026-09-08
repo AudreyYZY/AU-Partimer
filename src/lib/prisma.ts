@@ -1,37 +1,14 @@
-// Prisma client singleton
-// Note: Run `npx prisma generate` after setting up DATABASE_URL to generate types
+import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let PrismaClient: any;
-
-try {
-  // Dynamic import - will work after prisma generate
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const prismaModule = require("@/generated/prisma");
-  PrismaClient = prismaModule.PrismaClient;
-} catch {
-  // Fallback for development without database
-  console.warn(
-    "Prisma client not generated. Run `npx prisma generate` after configuring DATABASE_URL."
-  );
-  PrismaClient = class MockPrismaClient {
-    constructor() {
-      return new Proxy(this, {
-        get: () => {
-          throw new Error(
-            "Prisma client not generated. Run `npx prisma generate` first."
-          );
-        },
-      });
-    }
-  };
+const globalDatabase = globalThis as unknown as { auPrisma?: PrismaClient };
+export function getDatabase() {
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_NOT_CONFIGURED");
+  if (!globalDatabase.auPrisma) {
+    globalDatabase.auPrisma = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000,
+        idleTimeoutMillis: 30000, max: 5, statement_timeout: 8000 }),
+    });
+  }
+  return globalDatabase.auPrisma;
 }
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: InstanceType<typeof PrismaClient> | undefined;
-};
-
-export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

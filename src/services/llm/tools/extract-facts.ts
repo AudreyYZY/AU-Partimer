@@ -80,7 +80,7 @@ export const extractFactsSchema = z.object({
  * Convert tool call parameters to WorkplaceFacts
  */
 export function paramsToFacts(
-  params: z.infer<typeof extractFactsSchema>
+  params: Partial<z.infer<typeof extractFactsSchema>>
 ): WorkplaceFacts {
   return {
     state: params.state,

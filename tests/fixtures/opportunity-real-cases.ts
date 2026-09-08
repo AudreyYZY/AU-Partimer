@@ -11,6 +11,8 @@ export interface OpportunityCaseFixture {
 
 const restaurantStudentBase: OpportunityFacts = {
   state: "VIC",
+  age: 25,
+  fortnightHours: 36,
   visaType: "500",
   isStudyPeriod: true,
   industry: "restaurant",
@@ -89,7 +91,7 @@ export const opportunityRealCaseFixtures: OpportunityCaseFixture[] = [
       hasOtherOptions: "none",
       cashPressure: "high",
     },
-    expectedDecision: "SHORT_TERM_WITH_SAFEGUARDS",
+    expectedDecision: "VERIFY_FIRST",
     expectedSignals: ["below-minimum-benchmark", "cash-payment", "no-payslip"],
   },
   {
@@ -124,6 +126,7 @@ export const opportunityRealCaseFixtures: OpportunityCaseFixture[] = [
     facts: {
       ...restaurantStudentBase,
       weeklyHours: 30,
+      fortnightHours: 60,
       hasOtherOptions: "none",
       cashPressure: "high",
     },

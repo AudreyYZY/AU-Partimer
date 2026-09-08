@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
-import { assessOpportunity } from "../../src/services/opportunity/decision-engine";
+import { assessOpportunity as assessWithDate } from "../../src/services/opportunity/decision-engine";
 import type { OpportunityFacts } from "../../src/types/opportunity";
 import { opportunityRealCaseFixtures } from "../fixtures/opportunity-real-cases";
 
+const assessOpportunity = (facts: OpportunityFacts) =>
+  assessWithDate(facts, new Date("2026-09-07"));
+
 const baseOpportunity: OpportunityFacts = {
   state: "NSW",
+  age: 25,
+  fortnightHours: 40,
   visaType: "500",
   isStudyPeriod: true,
   industry: "restaurant",
@@ -36,10 +41,12 @@ const upfrontPaymentReport = assessOpportunity({
 
 assert.equal(upfrontPaymentReport.decision, "STOP");
 assert.ok(upfrontPaymentReport.riskScore >= 36);
-assert.equal(upfrontPaymentReport.meta.rulesetVersion, "2026.09.06");
+assert.equal(upfrontPaymentReport.meta.rulesetVersion, "2026.09.07.1");
 assert.equal(upfrontPaymentReport.meta.wageBenchmark.adultCasualHourly, 33.05);
 assert.ok(
-  upfrontPaymentReport.riskSignals.some((signal) => signal.id === "upfront-payment")
+  upfrontPaymentReport.riskSignals.some(
+    (signal) => signal.id === "upfront-payment",
+  ),
 );
 
 const harmReductionReport = assessOpportunity({
@@ -51,12 +58,12 @@ const harmReductionReport = assessOpportunity({
 
 assert.equal(harmReductionReport.decision, "SHORT_TERM_WITH_SAFEGUARDS");
 assert.ok(
-  harmReductionReport.safeguards.some((item) => item.includes("review point"))
+  harmReductionReport.safeguards.some((item) => item.includes("review point")),
 );
 assert.ok(
   harmReductionReport.verificationSteps.some(
-    (step) => step.id === "verify-employer-identity"
-  )
+    (step) => step.id === "verify-employer-identity",
+  ),
 );
 
 const unverifiableEmployerReport = assessOpportunity({
@@ -69,14 +76,17 @@ const unverifiableEmployerReport = assessOpportunity({
 assert.equal(unverifiableEmployerReport.decision, "VERIFY_FIRST");
 assert.ok(
   unverifiableEmployerReport.riskSignals.some(
-    (signal) => signal.id === "employer-identity-missing"
-  )
+    (signal) => signal.id === "employer-identity-missing",
+  ),
 );
 
 const cleanReport = assessOpportunity(baseOpportunity);
 
 assert.equal(cleanReport.decision, "PROCEED");
-assert.ok(cleanReport.confidence.score >= 80);
+assert.equal(
+  cleanReport.confidence.interpretation,
+  "information_completeness_not_accuracy",
+);
 assert.equal(cleanReport.confidence.evidenceCompleteness, 100);
 assert.equal(cleanReport.awardCheck.candidateAward?.code, "MA000119");
 
@@ -86,20 +96,23 @@ for (const fixture of opportunityRealCaseFixtures) {
   assert.equal(
     report.decision,
     fixture.expectedDecision,
-    `${fixture.id} should return ${fixture.expectedDecision}`
+    `${fixture.id} should return ${fixture.expectedDecision}`,
   );
 
   for (const expectedSignal of fixture.expectedSignals) {
     assert.ok(
       report.riskSignals.some((signal) => signal.id === expectedSignal),
-      `${fixture.id} should include ${expectedSignal}`
+      `${fixture.id} should include ${expectedSignal}`,
     );
   }
 
-  assert.ok(report.riskScore > 0, `${fixture.id} should have a non-zero risk score`);
+  assert.ok(
+    report.riskScore > 0,
+    `${fixture.id} should have a non-zero risk score`,
+  );
   assert.ok(
     report.riskSignals.every((signal) => signal.sourceId || signal.sourceUrl),
-    `${fixture.id} should keep source traceability on every signal`
+    `${fixture.id} should keep source traceability on every signal`,
   );
 }
 

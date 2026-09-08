@@ -1,6 +1,7 @@
 export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
 
 export interface Finding {
+  sourceUrl?: string;
   id: string;
   type: string; // e.g. "underpayment", "missing_super", "payslip_violation"
   title: string;

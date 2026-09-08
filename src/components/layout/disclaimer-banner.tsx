@@ -6,12 +6,12 @@ import { useLanguagePreference } from "@/hooks/use-language-preference";
 const copy = {
   zh: {
     lead: "这不是法律建议。",
-    body: "这个工具只用于帮你识别兼职和工作权益风险；具体法律建议请联系",
+    body: "这个工具只用于帮你识别兼职和工作权益风险；工作权益信息可联系",
     suffix: "。",
   },
   en: {
     lead: "This is not legal advice.",
-    body: "This tool only helps identify part-time work and employment rights risks. For legal advice, contact",
+    body: "This tool only helps identify part-time work and employment rights risks. For workplace rights information, contact",
     suffix: ".",
   },
 } as const;

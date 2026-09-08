@@ -1,5 +1,5 @@
 // Rule definitions for the employment rights diagnostic engine
-// These rules are the SOURCE OF TRUTH for legal determinations
+// These rules produce screening signals, not legal determinations.
 // LLM explains these findings - it does NOT create them
 
 import {
@@ -28,7 +28,15 @@ export interface StoredRule {
  * In MVP, rules are defined here. Future: load from database.
  */
 export async function getActiveRules(): Promise<StoredRule[]> {
-  return [...WAGE_RULES, ...SUPER_RULES, ...PAYSLIP_RULES, ...TRIAL_RULES, ...HOURS_RULES, ...VISA_RULES, ...CASH_RULES];
+  return [
+    ...WAGE_RULES,
+    ...SUPER_RULES,
+    ...PAYSLIP_RULES,
+    ...TRIAL_RULES,
+    ...HOURS_RULES,
+    ...VISA_RULES,
+    ...CASH_RULES,
+  ];
 }
 
 // ─── Wages Rules ──────────────────────────────────────
@@ -37,24 +45,35 @@ const WAGE_RULES: StoredRule[] = [
   {
     id: "MIN_WAGE_2026",
     name: "National Minimum Wage Check",
-    description: "Checks if hourly rate meets the national minimum wage benchmark (from 1 July 2026)",
+    description:
+      "Checks if hourly rate meets the national minimum wage benchmark (from 1 July 2026)",
     category: "wages",
     conditions: {
       all: [
-        { fact: "hourlyRate", operator: "lessThan", value: NATIONAL_MIN_WAGE_HOURLY },
-        { fact: "employmentType", operator: "notEqual", value: "casual" },
+        { fact: "adultBenchmarkApplicable", operator: "equal", value: true },
+        { fact: "hourlyRate", operator: "notEqual", value: null },
+        {
+          fact: "hourlyRate",
+          operator: "lessThan",
+          value: NATIONAL_MIN_WAGE_HOURLY,
+        },
+        {
+          fact: "employmentType",
+          operator: "in",
+          value: ["part_time", "full_time"],
+        },
       ],
     },
     event: {
       type: "UNDERPAYMENT",
       params: {
-        severity: "CRITICAL",
+        severity: "HIGH",
         title: "可能低于当前最低工资基准",
-        explanationTemplate:
-          `你填写的时薪 \${hourlyRate} 低于当前成人全国最低工资基准 $${NATIONAL_MIN_WAGE_HOURLY.toFixed(2)}/h（${NATIONAL_MIN_WAGE_EFFECTIVE_FROM} 起）。具体最低应付工资还需要结合 award 覆盖、年龄、等级、职责和排班核对。`,
-        legalRef: "Fair Work Act 2009, s.284-294; National Minimum Wage Order 2026",
+        explanationTemplate: `你填写的时薪 \${hourlyRate} 低于当前成人全国最低工资基准 $${NATIONAL_MIN_WAGE_HOURLY.toFixed(2)}/h（${NATIONAL_MIN_WAGE_EFFECTIVE_FROM} 起）。具体最低应付工资还需要结合 award 覆盖、年龄、等级、职责和排班核对。`,
+        legalRef:
+          "Fair Work Act 2009, s.284-294; National Minimum Wage Order 2026",
         recommendedAction:
-          "先用 Fair Work Pay Calculator 核对 award、年龄工资和岗位等级，再把它作为最终欠薪结论。",
+          "先用 Fair Work Pay Calculator 核对 award、年龄工资和岗位等级，必要时请专业人士核查；基准差额不是最终欠薪结论。",
         evidenceToCollect: [
           "显示工资到账的银行记录",
           "排班表或工时记录",
@@ -69,21 +88,27 @@ const WAGE_RULES: StoredRule[] = [
   {
     id: "CASUAL_MIN_RATE_2026",
     name: "Casual Minimum Rate Check",
-    description: "Checks if casual hourly rate includes the mandatory 25% loading",
+    description:
+      "Checks if casual hourly rate includes the mandatory 25% loading",
     category: "wages",
     conditions: {
       all: [
         { fact: "employmentType", operator: "equal", value: "casual" },
-        { fact: "hourlyRate", operator: "lessThan", value: NATIONAL_MIN_WAGE_CASUAL_HOURLY },
+        { fact: "adultBenchmarkApplicable", operator: "equal", value: true },
+        { fact: "hourlyRate", operator: "notEqual", value: null },
+        {
+          fact: "hourlyRate",
+          operator: "lessThan",
+          value: NATIONAL_MIN_WAGE_CASUAL_HOURLY,
+        },
       ],
     },
     event: {
       type: "UNDERPAYMENT",
       params: {
-        severity: "CRITICAL",
+        severity: "HIGH",
         title: "可能低于当前 casual 工资基准",
-        explanationTemplate:
-          `你填写的 casual 时薪 \${hourlyRate} 低于当前成人 casual 全国最低基准 $${NATIONAL_MIN_WAGE_CASUAL_HOURLY.toFixed(2)}/h，该基准包含 25% casual loading。具体 award rate 还需要结合年龄、岗位等级、职责和排班核对。`,
+        explanationTemplate: `你填写的 casual 时薪 \${hourlyRate} 低于当前成人 casual 全国最低基准 $${NATIONAL_MIN_WAGE_CASUAL_HOURLY.toFixed(2)}/h，该基准包含 25% casual loading。具体 award rate 还需要结合年龄、岗位等级、职责和排班核对。`,
         legalRef: "Fair Work Act 2009; Modern Award casual loading provisions",
         recommendedAction:
           "核对适用 award 和岗位等级。Casual 通常应包含 loading，但准确最低工资需要用官方工资计算器确认。",
@@ -117,10 +142,9 @@ const SUPER_RULES: StoredRule[] = [
     event: {
       type: "MISSING_SUPER",
       params: {
-        severity: "CRITICAL",
+        severity: "HIGH",
         title: "可能缺少养老金",
-        explanationTemplate:
-          `雇主可能没有为你支付应有养老金。当前 super guarantee 为符合条件收入的 ${(SUPER_GUARANTEE_RATE_CURRENT * 100).toFixed(0)}%。请通过工资单、super fund 或 myGov 核对到账。`,
+        explanationTemplate: `雇主可能没有为你支付应有养老金。当前 super guarantee 为符合条件收入的 ${(SUPER_GUARANTEE_RATE_CURRENT * 100).toFixed(0)}%。请通过工资单、super fund 或 myGov 核对到账。`,
         legalRef: "Superannuation Guarantee (Administration) Act 1992",
         recommendedAction:
           "检查你的 super 账户（myGov/ATO）并向雇主书面询问。如确认未支付，可以向 ATO 查询或报告。",
@@ -133,7 +157,8 @@ const SUPER_RULES: StoredRule[] = [
       },
     },
     legalRef: "Superannuation Guarantee (Administration) Act 1992",
-    sourceUrl: "https://www.ato.gov.au/businesses-and-organisations/super-for-employers",
+    sourceUrl:
+      "https://www.ato.gov.au/businesses-and-organisations/super-for-employers",
   },
 ];
 
@@ -152,7 +177,7 @@ const PAYSLIP_RULES: StoredRule[] = [
       ],
     },
     event: {
-      type: "PAYSLIP_VIOLATION",
+      type: "PAYSLIP_CHECK",
       params: {
         severity: "HIGH",
         title: "没有提供工资单",
@@ -170,7 +195,8 @@ const PAYSLIP_RULES: StoredRule[] = [
       },
     },
     legalRef: "Fair Work Act 2009, Section 536",
-    sourceUrl: "https://www.fairwork.gov.au/pay-and-wages/payslips-and-record-keeping",
+    sourceUrl:
+      "https://www.fairwork.gov.au/pay-and-wages/payslips-and-record-keeping",
   },
 ];
 
@@ -184,18 +210,19 @@ const TRIAL_RULES: StoredRule[] = [
     category: "trial",
     conditions: {
       all: [
-        { fact: "trialShiftHours", operator: "greaterThan", value: 4 },
+        { fact: "trialShiftHours", operator: "greaterThan", value: 0 },
         { fact: "trialPaid", operator: "equal", value: false },
       ],
     },
     event: {
-      type: "ILLEGAL_TRIAL",
+      type: "UNPAID_TRIAL_CHECK",
       params: {
-        severity: "CRITICAL",
+        severity: "HIGH",
         title: "可能存在无薪试工风险",
         explanationTemplate:
           "你填写的无薪试工/培训为 ${trialShiftHours} 小时，需要谨慎核查。短时间无薪试工只有在真正用于展示技能且被直接监督时才可能合理；较长或实际产生劳动成果的工作可能需要付薪。",
-        legalRef: "Fair Work Act 2009; Fair Work Ombudsman Guidance on Work Trials",
+        legalRef:
+          "Fair Work Act 2009; Fair Work Ombudsman Guidance on Work Trials",
         recommendedAction:
           "保存试工时长、任务、监督方式和结果的证据。先查 Fair Work 无薪试工指引，必要时联系 Fair Work。",
         evidenceToCollect: [
@@ -221,13 +248,14 @@ const TRIAL_RULES: StoredRule[] = [
       ],
     },
     event: {
-      type: "ILLEGAL_TRIAL",
+      type: "UNPAID_TRIAL_CHECK",
       params: {
-        severity: "CRITICAL",
+        severity: "HIGH",
         title: "多次无薪试工",
         explanationTemplate:
           "多次无薪试工是明显风险信号，因为重复或产生劳动成果的工作更不像单纯展示技能。",
-        legalRef: "Fair Work Act 2009; Fair Work Ombudsman Guidance on Work Trials",
+        legalRef:
+          "Fair Work Act 2009; Fair Work Ombudsman Guidance on Work Trials",
         recommendedAction:
           "保存所有试工记录。若这些班次应被视为工作，你可能需要按适用 award rate 追讨工资。",
         evidenceToCollect: [
@@ -252,9 +280,7 @@ const HOURS_RULES: StoredRule[] = [
     description: "Checks if weekly hours exceed maximum ordinary hours",
     category: "hours",
     conditions: {
-      all: [
-        { fact: "weeklyHours", operator: "greaterThan", value: 38 },
-      ],
+      all: [{ fact: "weeklyHours", operator: "greaterThan", value: 38 }],
     },
     event: {
       type: "OVERTIME_CONCERN",
@@ -263,7 +289,8 @@ const HOURS_RULES: StoredRule[] = [
         title: "每周工时超过 38 小时",
         explanationTemplate:
           "你填写每周工作 ${weeklyHours} 小时。标准 ordinary hours 通常是每周 38 小时，但加班费和 penalty rules 需要结合适用 award、协议和排班模式核对。",
-        legalRef: "Fair Work Act 2009, Section 62 (National Employment Standards)",
+        legalRef:
+          "Fair Work Act 2009, Section 62 (National Employment Standards)",
         recommendedAction:
           "核对超过 38 小时的部分是否需要加班费，并保存全部工时记录。",
         evidenceToCollect: [
@@ -291,7 +318,8 @@ const VISA_RULES: StoredRule[] = [
       all: [
         { fact: "visaType", operator: "equal", value: "500" },
         { fact: "isStudyPeriod", operator: "equal", value: true },
-        { fact: "weeklyHours", operator: "greaterThan", value: 24 },
+        { fact: "fortnightHours", operator: "greaterThan", value: 48 },
+        { fact: "visaHoursException", operator: "equal", value: false },
       ],
     },
     event: {
@@ -300,8 +328,9 @@ const VISA_RULES: StoredRule[] = [
         severity: "HIGH",
         title: "学生签工时可能超限",
         explanationTemplate:
-          "你填写在学生签 500 且上课期间每周工作 ${weeklyHours} 小时。学生签工时限制按连续 14 天周期计算，不能只看简单周平均，需要核对完整排班。",
-        legalRef: "Migration Regulations 1994, Schedule 8, Condition 8104",
+          "你填写上课期间双周工作 ${fortnightHours} 小时。核对每个周一开始的14天窗口、所有工作和个人签证条件及例外。",
+        legalRef:
+          "Migration Regulations 1994, Schedule 8; check individual condition 8105/8104",
         recommendedAction:
           "核对你的签证条件。上课期间通常需要控制在 14 天工时限制内；如担心合规风险，请考虑寻求移民建议。",
         evidenceToCollect: [
@@ -312,7 +341,8 @@ const VISA_RULES: StoredRule[] = [
         ],
       },
     },
-    legalRef: "Migration Regulations 1994, Schedule 8, Condition 8104",
+    legalRef:
+      "Migration Regulations 1994, Schedule 8; check individual condition 8105/8104",
     sourceUrl: "https://immi.homeaffairs.gov.au",
   },
 ];

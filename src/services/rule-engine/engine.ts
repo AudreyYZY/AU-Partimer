@@ -1,10 +1,14 @@
 // Rule Engine Service
 // Uses json-rules-engine for deterministic evaluation of workplace facts
-// LLM is NOT the source of truth - the rule engine makes legal determinations
+// Both tool outputs and LLM explanations are screening, not legal determinations.
 
 import { Engine, type RuleProperties } from "json-rules-engine";
 import type { WorkplaceFacts } from "@/types/facts";
 import type { Finding, Severity } from "@/types/findings";
+import {
+  NATIONAL_MIN_WAGE_EFFECTIVE_FROM,
+  SOURCE_REVIEW_DUE,
+} from "@/lib/constants";
 import { getActiveRules } from "./rules";
 
 export interface RuleEngineResult {
@@ -19,7 +23,7 @@ export interface RuleEngineResult {
  * This is the core deterministic evaluation - no LLM involved
  */
 export async function evaluateFacts(
-  facts: WorkplaceFacts
+  facts: WorkplaceFacts,
 ): Promise<RuleEngineResult> {
   const engine = new Engine();
 
@@ -32,7 +36,11 @@ export async function evaluateFacts(
       conditions: rule.conditions as RuleProperties["conditions"],
       event: {
         type: rule.event.type,
-        params: rule.event.params,
+        params: {
+          ...rule.event.params,
+          ruleId: rule.id,
+          sourceUrl: rule.sourceUrl,
+        },
       },
     };
     engine.addRule(ruleProperties);
@@ -48,9 +56,12 @@ export async function evaluateFacts(
   // Convert events to findings
   const findings = events.map((event) =>
     eventToFinding(
-      { type: event.type, params: (event.params ?? {}) as Record<string, unknown> },
-      facts
-    )
+      {
+        type: event.type,
+        params: (event.params ?? {}) as Record<string, unknown>,
+      },
+      facts,
+    ),
   );
 
   return {
@@ -76,6 +87,14 @@ function prepareFacts(facts: WorkplaceFacts): Record<string, unknown> {
 
     // Wages
     hourlyRate: facts.hourlyRate ?? null,
+    adultBenchmarkApplicable:
+      facts.age !== undefined &&
+      facts.age >= 21 &&
+      new Date().toISOString().slice(0, 10) >=
+        NATIONAL_MIN_WAGE_EFFECTIVE_FROM &&
+      new Date().toISOString().slice(0, 10) <= SOURCE_REVIEW_DUE,
+    fortnightHours: facts.fortnightHours ?? null,
+    visaHoursException: facts.visaHoursException ?? false,
     weeklyHours: facts.weeklyHours ?? null,
     paymentMethod: facts.paymentMethod ?? null,
 
@@ -105,14 +124,14 @@ function prepareFacts(facts: WorkplaceFacts): Record<string, unknown> {
  */
 function eventToFinding(
   event: { type: string; params: Record<string, unknown> },
-  originalFacts: WorkplaceFacts
+  originalFacts: WorkplaceFacts,
 ): Finding {
   const params = event.params;
 
   // Interpolate explanation template with actual fact values
   const explanation = interpolateTemplate(
     (params.explanationTemplate as string) ?? "",
-    originalFacts
+    originalFacts,
   );
 
   return {
@@ -121,11 +140,13 @@ function eventToFinding(
     title: (params.title as string) ?? event.type,
     severity: (params.severity as Severity) ?? "MEDIUM",
     explanation,
-    legalBasis: explanation, // Will be enhanced by LLM explanation layer
+    legalBasis:
+      "Screening signal; verify applicability with the official source.",
+    sourceUrl: params.sourceUrl as string | undefined,
     legalRef: params.legalRef as string,
     recommendedAction: (params.recommendedAction as string) ?? "",
     evidenceToCollect: (params.evidenceToCollect as string[]) ?? [],
-    ruleId: event.type,
+    ruleId: String(params.ruleId),
     triggeredFacts: extractTriggeredFacts(event.type, originalFacts),
   };
 }
@@ -134,10 +155,7 @@ function eventToFinding(
  * Interpolate a template string with fact values
  * Replaces ${key} with the corresponding fact value
  */
-function interpolateTemplate(
-  template: string,
-  facts: WorkplaceFacts
-): string {
+function interpolateTemplate(template: string, facts: WorkplaceFacts): string {
   return template.replace(/\$\{(\w+)\}/g, (match, key) => {
     const value = facts[key as keyof WorkplaceFacts];
     if (value === undefined || value === null) return match;
@@ -154,7 +172,7 @@ function interpolateTemplate(
  */
 function extractTriggeredFacts(
   eventType: string,
-  facts: WorkplaceFacts
+  facts: WorkplaceFacts,
 ): Record<string, unknown> {
   const relevant: Record<string, unknown> = {};
 
@@ -168,11 +186,11 @@ function extractTriggeredFacts(
       relevant.hasSuper = facts.hasSuper;
       relevant.employmentDurationWeeks = facts.employmentDurationWeeks;
       break;
-    case "PAYSLIP_VIOLATION":
+    case "PAYSLIP_CHECK":
       relevant.hasPayslip = facts.hasPayslip;
       relevant.employmentDurationWeeks = facts.employmentDurationWeeks;
       break;
-    case "ILLEGAL_TRIAL":
+    case "UNPAID_TRIAL_CHECK":
       relevant.trialShiftHours = facts.trialShiftHours;
       relevant.trialPaid = facts.trialPaid;
       relevant.trialRepeated = facts.trialRepeated;
@@ -180,7 +198,8 @@ function extractTriggeredFacts(
     case "VISA_RISK":
       relevant.visaType = facts.visaType;
       relevant.isStudyPeriod = facts.isStudyPeriod;
-      relevant.weeklyHours = facts.weeklyHours;
+      relevant.fortnightHours = facts.fortnightHours;
+      relevant.visaHoursException = facts.visaHoursException;
       break;
     case "CASH_PAYMENT_RISK":
       relevant.paymentMethod = facts.paymentMethod;
@@ -212,8 +231,8 @@ function generateFindingId(eventType: string): string {
 function deduplicateFindings(findings: Finding[]): Finding[] {
   const seen = new Set<string>();
   return findings.filter((finding) => {
-    if (seen.has(finding.type)) return false;
-    seen.add(finding.type);
+    if (seen.has(finding.ruleId ?? finding.type)) return false;
+    seen.add(finding.ruleId ?? finding.type);
     return true;
   });
 }
@@ -231,6 +250,6 @@ export function sortBySeverity(findings: Finding[]): Finding[] {
   };
 
   return [...findings].sort(
-    (a, b) => severityOrder[a.severity] - severityOrder[b.severity]
+    (a, b) => severityOrder[a.severity] - severityOrder[b.severity],
   );
 }

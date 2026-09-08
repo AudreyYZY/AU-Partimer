@@ -1,186 +1,118 @@
-# AU-Partimer: 澳大利亚兼职风险与权益 Agent
+# AU-Partimer
 
-AU-Partimer 是一个面向澳大利亚兼职求职者、留学生、casual workers 和 migrant workers 的风险判断工具。它的目标不是替用户做决定，而是在用户投入时间、交身份信息、开始试工或接受低薪工作前，帮他们把风险、证据缺口和下一步问题整理清楚。
+A bilingual, case-based workspace for Australian part-time job decisions.
 
-**这不是法律建议。** 这是一个实用 triage 工具：把用户提供的事实映射到官方来源支持的风险信号、规则检查和保守行动建议。
+**Controlled-pilot software, not a certified legal or migration adviser.**
+The product helps people identify evidence gaps, compare actual offers and plan
+their next action. It does not prove a recruiter is genuine or calculate a legal
+underpayment from an industry label.
 
-## 四个模式
+## Current workflow
 
-### 1. 兼职机会判断
+One case follows an opportunity from considering a role to working and reviewing pay.
+The old entry URLs remain available, but they now open the same workspace.
 
-适合还没入职、刚看到招聘信息、正在决定要不要继续聊或试工的用户。
+- Job details: deterministic risk signals, unknown-fact gates, rule version and source review deadline.
+- Evidence: bounded text/PDF extraction, manual review and confirmed hourly-pay provenance.
+- Hours: shift records and overlapping Monday-starting fortnight totals across cases.
+- Actions: saved checklist, questions, review date and exit conditions.
+- Situation: optional tool-using AI analysis with explicit missing facts and bounded costs.
+- Compare: user-provided offers, gross pay and commute-adjusted earnings. No invented safer jobs.
+- Chinese/English switching, opt-in browser persistence, validated JSON export/import.
+- Optional encrypted, session-owned server backups with stale-write protection.
 
-输出内容：
-- 继续策略：不要继续、先确认再继续、短期过渡但要保护自己、相对可继续
-- 风险分、可信度、证据完整度、来源覆盖率和规则版本
-- 诈骗、工资、工资单、养老金、签证工时和现实可行性风险
-- 开始前应该问雇主的问题
-- 开始前验证步骤：ABN/企业身份、Fair Work PACT、Record My Hours、Scamwatch、学生签排班核对
-- 雇主名称 / ABN 核验：配置 `ABN_LOOKUP_GUID` 后可调用 ABN Lookup；未配置时降级为官方链接人工核验
-- 候选 Award 核查：根据行业给出可能的 award family 和官方 PACT / pay guide 下一步
-- 急需收入时的 harm-reduction 保护措施
-- 更低风险的同类岗位搜索方向
-- 中文/英文一键切换
+ABN search returns candidate registration records, **not identity verification**.
+Images/scanned PDFs are explicitly unsupported for OCR. Extraction alone is not analysis.
+Exact award rates, ASIC automation, account recovery and independently measured legal
+accuracy remain out of scope for this release.
 
-### 2. 工作权益体检
+## Run locally
 
-适合已经开始工作的用户。通过结构化表单检查现有工作安排。
+Use Node.js 22.12+ (CI uses Node 22).
 
-输出内容：
-- 按严重程度排序的 findings
-- 每个问题的依据、解释、建议行动和证据清单
-- 当前已覆盖：工资低于基准、缺少工资单、缺少养老金、无薪试工、工时、学生签工时、现金无记录
+```sh
+npm ci
+npm run dev -- --port 3001
+```
 
-### 3. 具体情况分析
+Open [localhost:3001](http://localhost:3001). Local screening requires no API key
+or database. Configure optional services using the names in [.env.example](.env.example).
+Do not commit your actual environment file.
 
-适合用户遇到某个具体 workplace problem，例如被扣钱、被要求赔偿、突然改排班、威胁辞退。
+For a **new, empty PostgreSQL database**:
 
-当前状态：
-- 页面和 prompt 已中文化
-- 依赖 `OPENAI_API_KEY`，可选 `OPENAI_MODEL`
-- 如果没有配置 LLM key，会明确返回“LLM 未配置”，不会假装已经完成分析
+```sh
+npm run db:validate
+npm run db:deploy
+npm run build
+npm start -- --port 3001
+```
 
-### 4. 文件材料检查
+Existing databases must be inspected and baselined first. The seed intentionally
+does not insert illustrative wage rates. Production online routes require a
+configured pilot access token and database-backed budgets.
 
-适合用户有工资单、合同、招聘广告或聊天截图时使用。
+## Verify
 
-当前状态：
-- 已完成上传校验、纯文本提取和可复制文字 PDF 提取
-- 扫描版 PDF 会返回 `PDF_REQUIRES_OCR`
-- 图片会返回 `IMAGE_OCR_NOT_CONFIGURED`
-- OCR、工资单结构化解析、截图证据抽取还未完成
-- 当前不能把文件模式视为完整分析功能
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run evaluate
+TEST_DATABASE_URL=postgresql://... npm run test:db
+npx playwright install chromium
+npm run test:e2e
+npm run build
+npm audit --omit=dev --audit-level=high
+```
 
-## Tech Stack
+Integration tests use a migrated disposable database, never a production database.
+Browser tests cover Chromium desktop and a mobile viewport; they are not physical
+device or Safari certification. CI reproduces these checks with PostgreSQL.
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript |
-| Database | PostgreSQL + Prisma |
-| UI | Tailwind CSS + shadcn/ui |
-| LLM | Vercel AI SDK + OpenAI-compatible provider |
-| Rule Engine | json-rules-engine |
-| Auth | Not enabled in MVP |
-| Deployment | Vercel |
+`npm run release:check` intentionally rejects the bundled regression corpus:
+there is no independently double-reviewed holdout set. An engineering test pass
+is not legal accuracy. See the [validation protocol](docs/research/validation-protocol.md).
 
 ## Architecture
 
+```text
+Case facts -> deterministic screening -> evidence gaps + actions + versioned snapshot
+User text -> bounded AI tool loop -> rule checks / benchmark lookup -> explanation
+Upload -> byte/type/time/process limits -> extracted draft -> human confirmation
+Browser vault -> explicit opt-in -> local storage / JSON export
+Optional server backup -> access gate -> owner scoping -> AES-GCM -> PostgreSQL
 ```
-求职前：Opportunity Facts → Decision Engine → Risk Signals → Safeguards → Alternatives
-工作中：Workplace Facts → Rule Engine → Findings → Report
-自然语言：User Situation → LLM Fact Collection → Rule Engine → Explanation
-文件材料：Upload → Validation/Text Extraction → Structured Evidence (planned)
-```
 
-**核心原则：** 确定性规则负责风险信号和 findings。LLM 只能帮助收集事实、追问和解释结果，不能创造法律依据。
+Next.js App Router, TypeScript, React, Zod, Prisma/PostgreSQL, AI SDK and
+json-rules-engine. No raw uploaded file is stored by the upload endpoint.
+See the [operations guide](docs/operations/runbook.md) and
+[engineering/interview walkthrough](docs/engineering-walkthrough.md).
 
-## 可信度边界
+## Reliability boundaries
 
-- 高可信：明确诈骗信号、全国最低工资基准、工资单要求、当前 super guarantee、明显证据缺口。
-- 中可信：是否“值得继续”、是否短期过渡、同类岗位替代方向。这些是决策建议，不是法律结论。
-- 低可信或未完成：具体 award rate 精确计算、扫描版 PDF/图片 OCR、招聘者本人真实性判断、个案法律胜算判断。
-- 雇主身份核验支持 ABN Lookup web service；需要配置 `ABN_LOOKUP_GUID`。未配置时系统会返回官方 ABN Lookup / ASIC 链接和人工核验步骤。
-- 当前工资基准必须随 Fair Work 更新维护。
-- Award-specific pay rates 取决于年龄、职责、等级、行业覆盖和排班，不能假装只靠一个行业字段就能算准。
-- 合成案例和 AI 生成案例只能用于测试，不能作为法律来源。
-- 先交钱、加密货币充值、代收转账、过早索要身份文件等高风险诈骗信号应覆盖普通评分。
-- 如果用户现金压力高且没有其他机会，产品应提供保护措施和退出条件，而不是简单劝退。
-- 每份机会判断报告都会返回 `riskScore`、`confidence`、`meta.rulesetVersion`、`meta.effectiveFrom` 和当前工资基准。
+Information completeness is not a probability of safety. Missing age, pay,
+employment or identity information cannot produce a confident positive assessment.
+Financial urgency does not override scam protection. A low-pay transition plan
+does not make the pay lawful.
 
-## 评估指标
+The [Fair Work national benchmark](https://www.fairwork.gov.au/pay-and-wages/minimum-wages)
+is not a universal legal floor: applicable award, introductory and special rates
+can differ. Confirm classification and applicability using official tools.
+The current rules are not a historical payroll calculator.
 
-建议用三类指标衡量这个 agent 是否靠谱：
+Public regulatory examples in [the source corpus](docs/research/real-case-corpus.md)
+support regression design, not independent validation or reproduction of court outcomes.
 
-1. 规则准确率：用人工标注案例测试 STOP / VERIFY_FIRST / SHORT_TERM_WITH_SAFEGUARDS / PROCEED 是否符合专家预期。
-2. 证据完整度：报告是否明确列出缺失事实、来源链接、雇主问题和用户需要保存的证据。
-3. 行动有效性：用户看完后是否知道下一步问什么、查哪里、保存什么、什么情况下退出。
+## 中文说明
 
-最低上线门槛：
-- 严重诈骗样例不能被判成“可以继续”
-- 学生签明显超时不能被忽略
-- 低于当前全国最低基准不能漏报
-- 没有证据时不能给确定违法结论
-- 现金压力高时必须给短期保护策略，而不是只有拒绝建议
-- 真实案例抽象出的回归样例必须通过 `npm test`
+AU-Partimer 将求职前筛查、入职后记录、材料确认和具体问题分析汇入同一个案例。
+目标不是替用户拒绝工作，而是说明哪些事实还不知道、下一步查什么，以及收入紧张时如何保护自己。
 
-## Getting Started
-
-### Prerequisites
-- Node.js 18+
-- PostgreSQL database (or use Prisma Postgres)
-
-### Setup
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Copy `.env.example` to `.env` and configure:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Set up the database:
-   ```bash
-   npm run db:generate
-   npm run db:migrate
-   npm run db:seed
-   ```
-
-5. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-6. Open [http://localhost:3000](http://localhost:3000)
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `OPENAI_API_KEY` | Enables Situation Analyzer LLM chat |
-| `OPENAI_MODEL` | Optional model override; defaults to `gpt-5-mini` |
-| `OPENAI_BASE_URL` | Optional OpenAI-compatible base URL override |
-| `ABN_LOOKUP_GUID` | Optional ABN Lookup web services GUID for live employer identity checks |
-
-## Legal Data Sources
-
-- [Fair Work Ombudsman](https://www.fairwork.gov.au)
-- [Fair Work Commission](https://www.fwc.gov.au)
-- [Australian Taxation Office](https://www.ato.gov.au)
-- [Department of Home Affairs](https://immi.homeaffairs.gov.au)
-- [Scamwatch](https://www.scamwatch.gov.au)
-
-## Real Case Corpus
-
-真实案例和官方材料整理在 `docs/research/real-case-corpus.md`。这些材料用于设计规则、构造测试样例和校验风险标签，不应被复制成“个案法律结论”。
-
-评估方法和企业级上线门槛整理在 `docs/research/evaluation-framework.md`。
-
-## 同类工具对比
-
-| Tool | Stronger Than AU-Partimer | AU-Partimer Differentiation |
-|------|---------------------------|-----------------------------|
-| Fair Work PACT | 更权威，能计算 award、penalty rates、allowances 和 classification | AU-Partimer 更适合入职前判断“是否值得继续”和“先问什么” |
-| Fair Work Record My Hours | 更适合持续记录工时、导出 timesheet 和保存材料 | AU-Partimer 会告诉用户为什么要留证据、何时退出、查哪些风险 |
-| ABN Lookup / ASIC registers | 更适合核实企业身份和 business name | AU-Partimer 可调用 ABN Lookup，并把 ABN/ASIC 结果放进“是否继续”的决策流程 |
-| Scamwatch | 更权威的诈骗模式和报案入口 | AU-Partimer 会把诈骗信号和工资、签证、现实压力放在同一份行动建议里 |
-
-当前定位：AU-Partimer 不应该替代这些官方工具，而应成为“求职前筛查和行动编排层”：先判断风险，再把用户导向正确的官方检查。
-
-## Important Contacts
-
-- **Fair Work Ombudsman:** 13 13 94
-- **Translating & Interpreting Service:** 13 14 50
-
-## Disclaimer
-
-This tool provides general information only and does not constitute legal advice. For specific legal advice, please consult a qualified lawyer or contact the Fair Work Ombudsman on 13 13 94.
+当前适合受控试点和工程演示，不能宣传为已验证法律准确率的成熟商业产品。
+真实用户任务测试、专家独立标注、正式账户与保留政策、凭证齐备的线上服务验收仍需完成。
+详细边界见能力页面和部署文档。
 
 ## License
 
-Private — All rights reserved.
+Private. All rights reserved.

@@ -8,10 +8,25 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─── Users ────────────────────────────────────────────
+
+model CaseRecord {
+  id        String   @id
+  ownerHash String
+  encrypted String   @db.Text
+  revision  Int      @default(1)
+  updatedAt DateTime @updatedAt
+  @@index([ownerHash])
+}
+
+model ApiBudget {
+  id        String   @id
+  used      Int
+  expiresAt DateTime
+  @@index([expiresAt])
+}
 
 model User {
   id        String   @id @default(cuid())

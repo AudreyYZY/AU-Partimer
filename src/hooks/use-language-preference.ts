@@ -1,68 +1,38 @@
 "use client";
-
-import { useCallback, useEffect, useState } from "react";
-
+import { useSyncExternalStore } from "react";
 export type LanguagePreference = "zh" | "en";
-
-const STORAGE_KEY = "au-partimer-language";
-const CHANGE_EVENT = "au-partimer-language-change";
-let currentLanguage: LanguagePreference = "zh";
-
-function readLanguagePreference(): LanguagePreference {
-  if (typeof window === "undefined") return "zh";
-
+const KEY = "au-partimer-language";
+let current: LanguagePreference = "zh";
+const listeners = new Set<() => void>();
+function read(): LanguagePreference {
   try {
-    const storedValue = window.localStorage?.getItem(STORAGE_KEY);
-
-    currentLanguage = storedValue === "en" ? "en" : currentLanguage;
-  } catch {
-    return currentLanguage;
-  }
-
-  return currentLanguage;
+    current = localStorage.getItem(KEY) === "en" ? "en" : "zh";
+  } catch {}
+  return current;
 }
-
 function subscribe(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-
-  window.addEventListener("storage", callback);
-  window.addEventListener(CHANGE_EVENT, callback);
-
+  listeners.add(callback);
+  const storage = (event: StorageEvent) => {
+    if (event.key === KEY) {
+      read();
+      listeners.forEach((f) => f());
+    }
+  };
+  window.addEventListener("storage", storage);
   return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(CHANGE_EVENT, callback);
+    listeners.delete(callback);
+    window.removeEventListener("storage", storage);
   };
 }
-
 export function useLanguagePreference() {
-  const [language, setLanguageState] = useState<LanguagePreference>("zh");
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setLanguageState(readLanguagePreference());
-    }, 0);
-    const unsubscribe = subscribe(() => {
-        setLanguageState(readLanguagePreference());
-    });
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      unsubscribe();
-    };
-  }, []);
-
-  const setLanguage = useCallback((nextLanguage: LanguagePreference) => {
-    currentLanguage = nextLanguage;
-
+  const language = useSyncExternalStore(subscribe, read, () => "zh" as const);
+  const setLanguage = (next: LanguagePreference) => {
+    current = next;
     try {
-      window.localStorage?.setItem(STORAGE_KEY, nextLanguage);
-    } catch {
-      // Some embedded browsers disable storage; language switching should still work.
-    }
-
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-    setLanguageState(nextLanguage);
-  }, []);
-
+      localStorage.setItem(KEY, next);
+    } catch {}
+    document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
+    listeners.forEach((f) => f());
+  };
   return [language, setLanguage] as const;
 }

@@ -1,7 +1,7 @@
 import type { AUState } from "@/lib/constants";
 
 export type EmployerVerificationStatus =
-  | "live_verified"
+  | "record_found"
   | "live_not_found"
   | "manual_required"
   | "invalid_identifier"
@@ -66,6 +66,12 @@ export async function verifyEmployerIdentity(
     };
   }
 
+  const digitsOnly = /^[\d\s-]+$/.test(normalizedQuery);
+  const identifier = normalizedQuery.replace(/[\s-]/g, "");
+  if (digitsOnly && ((identifier.length !== 9 && identifier.length !== 11) ||
+      (identifier.length === 11 && !isValidAbn(identifier)))) {
+    return { ...baseResult, status: "invalid_identifier", message: "Invalid ABN or ACN format." };
+  }
   const guid = process.env.ABN_LOOKUP_GUID;
   if (!guid) {
     return {
@@ -77,7 +83,7 @@ export async function verifyEmployerIdentity(
   }
 
   try {
-    const digits = normalizedQuery.replace(/\D/g, "");
+    const digits = digitsOnly ? identifier : "";
 
     if (digits.length === 11) {
       if (!isValidAbn(digits)) {
@@ -96,7 +102,7 @@ export async function verifyEmployerIdentity(
 
       return {
         ...baseResult,
-        status: match ? "live_verified" : "live_not_found",
+        status: match ? "record_found" : "live_not_found",
         matches: match ? [match] : [],
         message: match
           ? "ABN found. Still verify the workplace address and contact channel independently."
@@ -113,7 +119,7 @@ export async function verifyEmployerIdentity(
 
       return {
         ...baseResult,
-        status: match ? "live_verified" : "live_not_found",
+        status: match ? "record_found" : "live_not_found",
         matches: match ? [match] : [],
         message: match
           ? "ACN-linked ABN found. Still verify the workplace address and official contact channel."
@@ -129,7 +135,7 @@ export async function verifyEmployerIdentity(
 
     return {
       ...baseResult,
-      status: matches.length > 0 ? "live_verified" : "live_not_found",
+      status: matches.length > 0 ? "record_found" : "live_not_found",
       matches,
       message:
         matches.length > 0
@@ -137,7 +143,7 @@ export async function verifyEmployerIdentity(
           : "No matching ABN record was returned for this name.",
     };
   } catch (error) {
-    console.error("ABN Lookup verification failed:", error);
+    console.error("ABN Lookup verification failed:", error instanceof Error ? error.name : "UnknownError");
 
     return {
       ...baseResult,
@@ -164,6 +170,7 @@ async function fetchJsonp(
   const response = await fetch(`${url}?${searchParams.toString()}`, {
     headers: { Accept: "application/javascript, application/json" },
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
 
   if (!response.ok) {
@@ -171,7 +178,10 @@ async function fetchJsonp(
   }
 
   const body = await response.text();
-  return parseJsonp(body);
+  const payload = parseJsonp(body);
+  if (typeof payload.Message === "string" && payload.Message.trim()) throw new Error("ABN provider error");
+  if (!("Abn" in payload) && !Array.isArray(payload.Names)) throw new Error("Unexpected ABN schema");
+  return payload;
 }
 
 function parseJsonp(body: string): Record<string, unknown> {

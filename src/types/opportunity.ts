@@ -16,7 +16,11 @@ export type RiskCategory =
 export interface OpportunityFacts {
   state: string;
   visaType: "500" | "417" | "462" | "other" | "none";
-  isStudyPeriod: boolean;
+  isStudyPeriod?: boolean;
+  age?: number;
+  fortnightHours?: number;
+  visaHoursException?: boolean;
+  trialSupervised?: boolean;
   industry:
     | "restaurant"
     | "cafe"
@@ -49,10 +53,10 @@ export interface OpportunityFacts {
     | "telegram"
     | "sms"
     | "other";
-  requiresUpfrontPayment: boolean;
-  asksForBankOrCrypto: boolean;
-  asksForIdentityDocsEarly: boolean;
-  urgentStartOrPressure: boolean;
+  requiresUpfrontPayment?: boolean;
+  asksForBankOrCrypto?: boolean;
+  asksForIdentityDocsEarly?: boolean;
+  urgentStartOrPressure?: boolean;
   hasOtherOptions: "none" | "some" | "several";
   cashPressure: "low" | "medium" | "high";
   commuteMinutes?: number;
@@ -105,6 +109,8 @@ export interface AwardCheck {
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface OpportunityConfidence {
+  interpretation: "information_completeness_not_accuracy";
+  verification: "self_reported_not_independently_verified";
   level: ConfidenceLevel;
   score: number;
   evidenceCompleteness: number;
@@ -113,6 +119,8 @@ export interface OpportunityConfidence {
 }
 
 export interface OpportunityReportMeta {
+  reviewDue: string;
+  sourceReviewOverdue: boolean;
   rulesetVersion: string;
   generatedAt: string;
   jurisdiction: "AU";

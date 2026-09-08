@@ -1,5 +1,2 @@
-import { OpportunityPageClient } from "@/components/opportunity/opportunity-page-client";
-
-export default function OpportunityPage() {
-  return <OpportunityPageClient />;
-}
+import { Workspace } from "@/components/workspace/workspace";
+export default function Page() { return <Workspace initialTab="details" initialPhase="considering"/>; }

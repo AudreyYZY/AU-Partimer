@@ -10,6 +10,9 @@ export interface WorkplaceFacts {
   employmentType?: "full_time" | "part_time" | "casual";
 
   // ─── Wages ──────────────────────────────────────────
+  age?: number;
+  fortnightHours?: number;
+  visaHoursException?: boolean;
   hourlyRate?: number; // as reported by user
   weeklyHours?: number;
   paymentMethod?: "cash" | "bank" | "mixed";
